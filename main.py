@@ -1,8 +1,20 @@
+import sys
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
+from PyQt4.QtGui import QApplication, QMainWindow
+
+from forms.main import Ui_MainWindow
 from models import Bookmark, Base
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        QMainWindow.__init__(self)
+        self.form = Ui_MainWindow()
+        self.form.setupUi(self)
+
 
 
 def make_Session():
@@ -11,8 +23,7 @@ def make_Session():
     Base.metadata.create_all(engine) # will not recreate existing db's
     return Session
 
-
-if __name__ == '__main__':
+def dbTest():
     Session = make_Session()
     session = Session()
 
@@ -51,3 +62,13 @@ if __name__ == '__main__':
             break
         else:
             print "I didn't get that."
+
+def startQt():
+    app = QApplication(sys.argv)
+    mw = MainWindow()
+    mw.show()
+    app.exec_()
+
+
+if __name__ == '__main__':
+    startQt()
