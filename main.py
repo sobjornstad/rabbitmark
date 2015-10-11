@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, and_, or_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from PyQt4.QtGui import QApplication, QMainWindow
+from PyQt4.QtGui import QApplication, QMainWindow, QItemSelectionModel
 from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL
 
 from forms.main import Ui_MainWindow
@@ -87,6 +87,9 @@ class BookmarkTableModel(QAbstractTableModel):
     def flags(self, index):
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled # | Qt.ItemIsEditable
 
+    def getObj(self, index):
+        return self.L[index.row()]
+
 
 
 class MainWindow(QMainWindow):
@@ -97,9 +100,16 @@ class MainWindow(QMainWindow):
 
         Session = make_Session()
 
+        # set up actions
+        self.form.action_Quit.triggered.connect(self.quit)
+
         # set up data table
+        self.tableView = self.form.bookmarkTable
         self.tableModel = BookmarkTableModel(self, Session)
-        self.form.bookmarkTable.setModel(self.tableModel)
+        self.tableView.setModel(self.tableModel)
+        self.sm = self.tableView.selectionModel()
+        self.sm.selectionChanged.connect(self.fillEditPane)
+
 
         def doUpdateForSearch():
             """
@@ -122,7 +132,27 @@ class MainWindow(QMainWindow):
         self.form.tagList.itemSelectionChanged.connect(doUpdateForSearch)
         doUpdateForSearch()
 
-        # TODO: set up bottom portion
+        # select first item
+        idx = self.tableModel.index(0, 0)
+        self.tableView.setCurrentIndex(idx)
+        self.fillEditPane()
+
+    def closeEvent(self, event):
+        "Catch click of the X button, etc., and properly quit."
+        self.quit()
+
+    def quit(self):
+        # commit? we don't have a session in here
+        sys.exit(0)
+
+    def fillEditPane(self):
+        mark = self.tableModel.getObj(self.tableView.currentIndex())
+        self.form.nameBox.setText(mark.name)
+        self.form.urlBox.setText(mark.url)
+        self.form.descriptionBox.setText(mark.description)
+        tags = ', '.join([i.text for i in mark.tags_rel])
+        self.form.tagsBox.setText(tags)
+
 
 
 def scan_tags(Session):
