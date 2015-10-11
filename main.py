@@ -1,13 +1,93 @@
 import sys
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_, or_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 from PyQt4.QtGui import QApplication, QMainWindow
+from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL
 
 from forms.main import Ui_MainWindow
-from models import Bookmark, Base
+from models import Bookmark, Tag, Base
+
+class BookmarkTableModel(QAbstractTableModel):
+    def __init__(self, parent, Session, *args):
+        QAbstractTableModel.__init__(self)
+        self.parent = parent
+        self.Session = Session
+        self.session = self.Session()
+        self.headerdata = ("Name", "Tags")
+        self.updateForSearch("", [])
+
+    def updateForSearch(self, searchText, tags):
+        nameText = "%" + searchText + "%"
+        self.beginResetModel()
+        self.L = []
+
+        # sqlalchemy doesn't support in_ queries on many-to-many relationships,
+        # so it's necessary to get the text of the tags and compare those.
+        tag_objs = self.session.query(Tag).filter(
+                or_(*[Tag.text.like(t) for t in tags]))
+        allowed_tags = [i.text for i in tag_objs]
+
+        # NOTE: without my even having to do anything, this behaves the way I
+        # want it to when nothing is selected (equivalent to everything).
+        query = self.session.query(Bookmark).filter(
+                and_(
+                    or_(
+                        Bookmark.name.like(nameText),
+                        Bookmark.url.like(nameText),
+                        Bookmark.description.like(nameText)
+                       ),
+                    Bookmark.tags_rel.any(Tag.text.in_(allowed_tags))
+                ))
+
+        for mark in query:
+            self.L.append(mark)
+        self.emit(SIGNAL("dataChanged"))
+        self.endResetModel()
+
+    def rowCount(self, parent):
+        return len(self.L)
+    def columnCount(self, parent):
+        return len(self.headerdata)
+    #def numItems(self):
+        #return len(self.l)
+
+    def headerData(self, col, orientation, role):
+        if (orientation == Qt.Horizontal and role == Qt.DisplayRole):
+            return self.headerdata[col]
+        else:
+            return None
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        if not (role == Qt.DisplayRole or role == Qt.EditRole):
+            return None
+
+        col = index.column()
+        mark = self.L[index.row()]
+        if col == 0:
+            return mark.name
+        else:
+            return ', '.join([i.text for i in mark.tags_rel])
+
+    # def setData(self, index, value, role):
+    #     colNum = index.column()
+    #     bookmarkNum = index.row()
+    #     mark = self.L[bookmarkNum]
+    #     value = unicode(value.toString())
+
+    #     if colNum == 0:
+    #         pass bla bla
+    #     self.emit(QtCore.SIGNAL("dataChanged"))
+    #     return True
+
+    def flags(self, index):
+        return Qt.ItemIsSelectable | Qt.ItemIsEnabled # | Qt.ItemIsEditable
+
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -15,6 +95,41 @@ class MainWindow(QMainWindow):
         self.form = Ui_MainWindow()
         self.form.setupUi(self)
 
+        Session = make_Session()
+
+        # set up data table
+        self.tableModel = BookmarkTableModel(self, Session)
+        self.form.bookmarkTable.setModel(self.tableModel)
+
+        def doUpdateForSearch():
+            """
+            Pass values to the data table model to update its contents for a
+            new search.
+            """
+            tags = [unicode(i.text())
+                    for i in self.form.tagList.selectedItems()]
+            self.tableModel.updateForSearch(
+                    unicode(self.form.searchBox.text()),
+                    tags)
+
+        # set up tag list
+        self.tags = scan_tags(Session)
+        for i in self.tags:
+            self.form.tagList.addItem(i)
+
+        # set up re-search triggers and update for the first time
+        self.form.searchBox.textChanged.connect(doUpdateForSearch)
+        self.form.tagList.itemSelectionChanged.connect(doUpdateForSearch)
+        doUpdateForSearch()
+
+        # TODO: set up bottom portion
+
+
+def scan_tags(Session):
+    session = Session()
+    tag_list = [unicode(i) for i in session.query(Tag).all()]
+    tag_list.sort()
+    return tag_list
 
 
 def make_Session():
@@ -32,6 +147,7 @@ def dbTest():
         print "Would you like to:"
         print "1) Add a bookmark"
         print "2) Search for a bookmark"
+        print "3) Delete a bookmark"
         print "0) Quit"
         what_do = raw_input("> ")
 
@@ -41,10 +157,20 @@ def dbTest():
             new_url = raw_input("Url: ")
             new_tags = raw_input("Tags: ")
             new_descr = raw_input("Description: ")
-            g_bookmark = Bookmark(name=new_name, url=new_url, tags=new_tags,
-                                  description=new_descr)
+
+            g_bookmark = Bookmark(name=new_name, url=new_url, description=new_descr)
             session.add(g_bookmark)
+
+            tag_list = [tag.strip() for tag in new_tags.split(',')]
+            for tag in tag_list:
+                existingTag = session.query(Tag).filter(Tag.text == tag).first()
+                if existingTag:
+                    g_bookmark.tags_rel.append(existingTag)
+                else:
+                    new_tag = Tag(text=tag)
+                    g_bookmark.tags_rel.append(new_tag)
             print "Added bookmark with name %s." % new_name
+
         elif what_do == "2":
             search_for = raw_input("Name (substr search): ")
             search_for = "%" + search_for + "%"
@@ -56,6 +182,19 @@ def dbTest():
                 print "Description:"
                 print bookmark.description
                 print ""
+
+        elif what_do == "3":
+            search_for = raw_input("Delete name (substr search): ")
+            search_for = "%" + search_for + "%"
+            for bookmark in session.query(Bookmark).filter(
+                    Bookmark.name.like(search_for)):
+                print "Deleting name '%s'...sure?" % bookmark.name
+                try:
+                    raw_input("(^C to cancel)")
+                except KeyboardInterrupt:
+                    continue
+                session.delete(bookmark)
+
         elif what_do == "0":
             print "Exiting."
             session.commit()
@@ -71,4 +210,5 @@ def startQt():
 
 
 if __name__ == '__main__':
+    #dbTest()
     startQt()

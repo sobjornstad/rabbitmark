@@ -14,16 +14,16 @@
    <string>RabbitMark</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_3">
+   <layout class="QHBoxLayout" name="horizontalLayout_4">
     <item>
      <widget class="QSplitter" name="splitter_2">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QListWidget" name="listWidget">
+         <widget class="QListWidget" name="tagList">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
             <horstretch>1</horstretch>
@@ -46,7 +46,7 @@
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="selectionMode">
-           <enum>QAbstractItemView::ExtendedSelection</enum>
+           <enum>QAbstractItemView::MultiSelection</enum>
           </property>
           <property name="uniformItemSizes">
            <bool>true</bool>
@@ -56,16 +56,54 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-           <widget class="QPushButton" name="pushButton_3">
+           <widget class="QPushButton" name="tagsAllButton">
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="text">
              <string>All</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_4">
+           <widget class="QPushButton" name="tagsNoneButton">
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="text">
              <string>None</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="tagsSaveButton">
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Save</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="tagsLoadButton">
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Load</string>
             </property>
            </widget>
           </item>
@@ -73,25 +111,61 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <widget class="QLineEdit" name="lineEdit_4"/>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QLineEdit" name="searchBox">
+            <property name="placeholderText">
+             <string>Filter...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="addButton">
+            <property name="minimumSize">
+             <size>
+              <width>30</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>30</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>+</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
          <widget class="QSplitter" name="splitter">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
-          <widget class="QTableView" name="tableView">
+          <widget class="QTableView" name="bookmarkTable">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>4</horstretch>
              <verstretch>3</verstretch>
             </sizepolicy>
            </property>
+           <property name="selectionBehavior">
+            <enum>QAbstractItemView::SelectRows</enum>
+           </property>
+           <attribute name="horizontalHeaderStretchLastSection">
+            <bool>true</bool>
+           </attribute>
+           <attribute name="verticalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
           </widget>
-          <widget class="QWidget" name="">
+          <widget class="QWidget" name="layoutWidget">
            <layout class="QGridLayout" name="gridLayout">
             <item row="0" column="0">
              <widget class="QLabel" name="label_2">
@@ -99,12 +173,12 @@
                <string>&amp;Name</string>
               </property>
               <property name="buddy">
-               <cstring>lineEdit</cstring>
+               <cstring>nameBox</cstring>
               </property>
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QLineEdit" name="lineEdit">
+             <widget class="QLineEdit" name="nameBox">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>4</horstretch>
@@ -119,14 +193,14 @@
                <string>&amp;URL</string>
               </property>
               <property name="buddy">
-               <cstring>lineEdit_2</cstring>
+               <cstring>urlBok</cstring>
               </property>
              </widget>
             </item>
             <item row="1" column="1">
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
-               <widget class="QLineEdit" name="lineEdit_2">
+               <widget class="QLineEdit" name="urlBok">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>4</horstretch>
@@ -136,14 +210,14 @@
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton_2">
+               <widget class="QPushButton" name="copyUrlButton">
                 <property name="text">
                  <string>Copy</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton">
+               <widget class="QPushButton" name="browseUrlButton">
                 <property name="text">
                  <string>Browse to</string>
                 </property>
@@ -157,12 +231,12 @@
                <string>&amp;Tags</string>
               </property>
               <property name="buddy">
-               <cstring>lineEdit_3</cstring>
+               <cstring>tagsBox</cstring>
               </property>
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QLineEdit" name="lineEdit_3">
+             <widget class="QLineEdit" name="tagsBox">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>4</horstretch>
@@ -180,12 +254,12 @@
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
               </property>
               <property name="buddy">
-               <cstring>textEdit</cstring>
+               <cstring>descriptionBox</cstring>
               </property>
              </widget>
             </item>
             <item row="3" column="1">
-             <widget class="QTextEdit" name="textEdit">
+             <widget class="QTextEdit" name="descriptionBox">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>4</horstretch>
@@ -225,20 +299,23 @@
    <property name="text">
     <string>&amp;Quit</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
   </action>
  </widget>
  <tabstops>
-  <tabstop>lineEdit_4</tabstop>
-  <tabstop>tableView</tabstop>
-  <tabstop>lineEdit</tabstop>
-  <tabstop>lineEdit_2</tabstop>
-  <tabstop>lineEdit_3</tabstop>
-  <tabstop>textEdit</tabstop>
-  <tabstop>pushButton_2</tabstop>
-  <tabstop>pushButton</tabstop>
-  <tabstop>listWidget</tabstop>
-  <tabstop>pushButton_3</tabstop>
-  <tabstop>pushButton_4</tabstop>
+  <tabstop>searchBox</tabstop>
+  <tabstop>bookmarkTable</tabstop>
+  <tabstop>nameBox</tabstop>
+  <tabstop>urlBok</tabstop>
+  <tabstop>tagsBox</tabstop>
+  <tabstop>descriptionBox</tabstop>
+  <tabstop>copyUrlButton</tabstop>
+  <tabstop>browseUrlButton</tabstop>
+  <tabstop>tagList</tabstop>
+  <tabstop>tagsAllButton</tabstop>
+  <tabstop>tagsNoneButton</tabstop>
  </tabstops>
  <resources/>
  <connections/>
