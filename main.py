@@ -19,6 +19,52 @@ class BookmarkTableModel(QAbstractTableModel):
         self.headerdata = ("Name", "Tags")
         self.updateForSearch("", [])
 
+    ### Standard reimplemented methods ###
+    def rowCount(self, parent):
+        return len(self.L)
+    def columnCount(self, parent):
+        return len(self.headerdata)
+
+    def flags(self, index):
+        return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+
+    def headerData(self, col, orientation, role):
+        if (orientation == Qt.Horizontal and role == Qt.DisplayRole):
+            return self.headerdata[col]
+        else:
+            return None
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        if not (role == Qt.DisplayRole or role == Qt.EditRole):
+            return None
+
+        col = index.column()
+        mark = self.L[index.row()]
+        if col == 0:
+            return mark.name
+        else:
+            return ', '.join([i.text for i in mark.tags_rel])
+
+    # def setData(self, index, value, role):
+    #     colNum = index.column()
+    #     bookmarkNum = index.row()
+    #     mark = self.L[bookmarkNum]
+    #     value = unicode(value.toString())
+
+    #     if colNum == 0:
+    #         pass bla bla
+    #     self.emit(QtCore.SIGNAL("dataChanged"))
+    #     return True
+
+    ### Custom methods ###
+    def indexFromPk(self, pk):
+        for row, obj in enumerate(self.L):
+            if obj.id == pk:
+                return self.index(row, 0)
+        return None
+
     def updateForSearch(self, searchText, tags):
         nameText = "%" + searchText + "%"
         self.beginResetModel()
@@ -46,52 +92,6 @@ class BookmarkTableModel(QAbstractTableModel):
             self.L.append(mark)
         self.emit(SIGNAL("dataChanged"))
         self.endResetModel()
-
-    def rowCount(self, parent):
-        return len(self.L)
-    def columnCount(self, parent):
-        return len(self.headerdata)
-    #def numItems(self):
-        #return len(self.l)
-
-    def headerData(self, col, orientation, role):
-        if (orientation == Qt.Horizontal and role == Qt.DisplayRole):
-            return self.headerdata[col]
-        else:
-            return None
-
-    def indexFromPk(self, pk):
-        for row, obj in enumerate(self.L):
-            if obj.id == pk:
-                return self.index(row, 0)
-        return None
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        if not (role == Qt.DisplayRole or role == Qt.EditRole):
-            return None
-
-        col = index.column()
-        mark = self.L[index.row()]
-        if col == 0:
-            return mark.name
-        else:
-            return ', '.join([i.text for i in mark.tags_rel])
-
-    # def setData(self, index, value, role):
-    #     colNum = index.column()
-    #     bookmarkNum = index.row()
-    #     mark = self.L[bookmarkNum]
-    #     value = unicode(value.toString())
-
-    #     if colNum == 0:
-    #         pass bla bla
-    #     self.emit(QtCore.SIGNAL("dataChanged"))
-    #     return True
-
-    def flags(self, index):
-        return Qt.ItemIsSelectable | Qt.ItemIsEnabled # | Qt.ItemIsEditable
 
     def getObj(self, index):
         try:
@@ -128,27 +128,10 @@ class MainWindow(QMainWindow):
         for i in self.tags:
             self.form.tagList.addItem(i)
 
-        def doUpdateForSearch():
-            """
-            Pass values to the data table model to update its contents for a
-            new search.
-            """
-            tags = [unicode(i.text())
-                    for i in self.form.tagList.selectedItems()]
-            mark = self.tableModel.getObj(self.tableView.currentIndex())
-            if mark is None:
-                oldId = None
-            else:
-                oldId = mark.id
-            self.tableModel.updateForSearch(
-                    unicode(self.form.searchBox.text()),
-                    tags)
-            self.reselectItem(oldId) # always have one item selected
-
         # set up re-search triggers and update for the first time
-        self.form.searchBox.textChanged.connect(doUpdateForSearch)
-        self.form.tagList.itemSelectionChanged.connect(doUpdateForSearch)
-        doUpdateForSearch()
+        self.form.searchBox.textChanged.connect(self.doUpdateForSearch)
+        self.form.tagList.itemSelectionChanged.connect(self.doUpdateForSearch)
+        self.doUpdateForSearch()
 
     def closeEvent(self, event):
         "Catch click of the X button, etc., and properly quit."
@@ -157,6 +140,23 @@ class MainWindow(QMainWindow):
     def quit(self):
         # commit? we don't have a session in here
         sys.exit(0)
+
+    def doUpdateForSearch(self):
+        """
+        Pass values to the data table model to update its contents for a
+        new search.
+        """
+        tags = [unicode(i.text())
+                for i in self.form.tagList.selectedItems()]
+        mark = self.tableModel.getObj(self.tableView.currentIndex())
+        if mark is None:
+            oldId = None
+        else:
+            oldId = mark.id
+        self.tableModel.updateForSearch(
+                unicode(self.form.searchBox.text()),
+                tags)
+        self.reselectItem(oldId) # always have one item selected
 
     def reselectItem(self, item=None):
         """
@@ -194,19 +194,20 @@ class MainWindow(QMainWindow):
                         False if what == 'none' else True)
 
 
-
 def scan_tags(Session):
     session = Session()
     tag_list = [unicode(i) for i in session.query(Tag).all()]
     tag_list.sort()
     return tag_list
 
-
 def make_Session():
     engine = create_engine('sqlite:///testdb.db')
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine) # will not recreate existing db's
     return Session
+
+
+
 
 def dbTest():
     Session = make_Session()
@@ -262,7 +263,7 @@ def dbTest():
                 try:
                     raw_input("(^C to cancel)")
                 except KeyboardInterrupt:
-                    continue
+                    break
                 session.delete(bookmark)
 
         elif what_do == "0":
@@ -277,7 +278,6 @@ def startQt():
     mw = MainWindow()
     mw.show()
     app.exec_()
-
 
 if __name__ == '__main__':
     #dbTest()
