@@ -93,6 +93,13 @@ class BookmarkTableModel(QAbstractTableModel):
         self.emit(SIGNAL("dataChanged"))
         self.endResetModel()
 
+    def saveIfEdited(self, mark, content):
+        #currentData = self.L[index.row()]
+        print "checkEdited dump"
+        print mark
+        print content
+
+
     def getObj(self, index):
         try:
             return self.L[index.row()]
@@ -193,6 +200,19 @@ class MainWindow(QMainWindow):
                 self.form.tagList.item(i).setSelected(
                         False if what == 'none' else True)
 
+    def mRepr(self):
+        """
+        Short for "mark representation": return a dictionary of the content
+        currently in the fields so that the model can compare and/or save it.
+        """
+        print "mRepr()"
+        return {
+                'name':  unicode(self.form.nameBox.text()),
+                'url':   unicode(self.form.urlBox.text()),
+                'descr': unicode(self.form.descriptionBox.toPlainText()),
+                'tags':  [i.strip() for i in
+                          unicode(self.form.tagsBox.text()).split(',')],
+               }
 
 def scan_tags(Session):
     session = Session()
