@@ -60,6 +60,12 @@ class BookmarkTableModel(QAbstractTableModel):
         else:
             return None
 
+    def indexFromPk(self, pk):
+        for row, obj in enumerate(self.L):
+            if obj.id == pk:
+                return self.index(row, 0)
+        return None
+
     def data(self, index, role):
         if not index.isValid():
             return None
@@ -88,7 +94,10 @@ class BookmarkTableModel(QAbstractTableModel):
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled # | Qt.ItemIsEditable
 
     def getObj(self, index):
-        return self.L[index.row()]
+        try:
+            return self.L[index.row()]
+        except IndexError:
+            return None
 
 
 
@@ -102,6 +111,10 @@ class MainWindow(QMainWindow):
 
         # set up actions
         self.form.action_Quit.triggered.connect(self.quit)
+        self.form.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
+        self.form.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
+        #self.form.tagsSaveButton.
+        #self.form.tagsLoadButton.
 
         # set up data table
         self.tableView = self.form.bookmarkTable
@@ -110,6 +123,10 @@ class MainWindow(QMainWindow):
         self.sm = self.tableView.selectionModel()
         self.sm.selectionChanged.connect(self.fillEditPane)
 
+        # set up tag list
+        self.tags = scan_tags(Session)
+        for i in self.tags:
+            self.form.tagList.addItem(i)
 
         def doUpdateForSearch():
             """
@@ -118,24 +135,20 @@ class MainWindow(QMainWindow):
             """
             tags = [unicode(i.text())
                     for i in self.form.tagList.selectedItems()]
+            mark = self.tableModel.getObj(self.tableView.currentIndex())
+            if mark is None:
+                oldId = None
+            else:
+                oldId = mark.id
             self.tableModel.updateForSearch(
                     unicode(self.form.searchBox.text()),
                     tags)
-
-        # set up tag list
-        self.tags = scan_tags(Session)
-        for i in self.tags:
-            self.form.tagList.addItem(i)
+            self.reselectItem(oldId) # always have one item selected
 
         # set up re-search triggers and update for the first time
         self.form.searchBox.textChanged.connect(doUpdateForSearch)
         self.form.tagList.itemSelectionChanged.connect(doUpdateForSearch)
         doUpdateForSearch()
-
-        # select first item
-        idx = self.tableModel.index(0, 0)
-        self.tableView.setCurrentIndex(idx)
-        self.fillEditPane()
 
     def closeEvent(self, event):
         "Catch click of the X button, etc., and properly quit."
@@ -145,13 +158,40 @@ class MainWindow(QMainWindow):
         # commit? we don't have a session in here
         sys.exit(0)
 
+    def reselectItem(self, item=None):
+        """
+        Select the item /item/ if it still exists in the view, or the first
+        item in the database if it doesn't or /item/ is None. This is to be
+        called after updating the table view through a resetModel().
+        """
+        if item is None:
+            idx = self.tableModel.index(0, 0)
+        else:
+            idx = self.tableModel.indexFromPk(item)
+            if idx is None:
+                idx = self.tableModel.index(0, 0)
+
+        self.tableView.setCurrentIndex(idx)
+        self.fillEditPane()
+
     def fillEditPane(self):
         mark = self.tableModel.getObj(self.tableView.currentIndex())
-        self.form.nameBox.setText(mark.name)
-        self.form.urlBox.setText(mark.url)
-        self.form.descriptionBox.setText(mark.description)
-        tags = ', '.join([i.text for i in mark.tags_rel])
-        self.form.tagsBox.setText(tags)
+        if not self.sm.selectedRows():
+            # nothing selected; hide editor pane
+            self.form.splitter.widget(1).setVisible(False)
+        else:
+            self.form.splitter.widget(1).setVisible(True)
+            self.form.nameBox.setText(mark.name)
+            self.form.urlBox.setText(mark.url)
+            self.form.descriptionBox.setText(mark.description)
+            tags = ', '.join([i.text for i in mark.tags_rel])
+            self.form.tagsBox.setText(tags)
+
+    def tagsSelect(self, what):
+        if what in ('none', 'all'):
+            for i in range(self.form.tagList.count()):
+                self.form.tagList.item(i).setSelected(
+                        False if what == 'none' else True)
 
 
 
