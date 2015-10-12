@@ -5,8 +5,9 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from PyQt4.QtGui import QApplication, QMainWindow, QItemSelectionModel
-from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL
+from PyQt4.QtGui import QApplication, QMainWindow, QItemSelectionModel, \
+        QDesktopServices
+from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL, QUrl
 
 from forms.main import Ui_MainWindow
 from models import Bookmark, Tag, Base
@@ -153,6 +154,8 @@ class MainWindow(QMainWindow):
         self.form.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
         #self.form.tagsSaveButton.
         #self.form.tagsLoadButton.
+        self.form.copyUrlButton.clicked.connect(self.copyUrl)
+        self.form.browseUrlButton.clicked.connect(self.openUrl)
 
         # set up data table
         self.tableView = self.form.bookmarkTable
@@ -179,6 +182,11 @@ class MainWindow(QMainWindow):
     def quit(self):
         # commit? we don't have a session in here
         sys.exit(0)
+
+    def copyUrl(self):
+        QApplication.clipboard().setText(self.form.urlBox.text())
+    def openUrl(self):
+        QDesktopServices.openUrl(QUrl(self.form.urlBox.text()))
 
     def resetTagList(self):
         self.tags = scan_tags(self.Session)
