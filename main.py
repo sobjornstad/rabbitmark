@@ -164,6 +164,25 @@ class BookmarkTableModel(QAbstractTableModel):
         #self.emit(SIGNAL("dataChanged"))
         return nextObj.id
 
+    def renameTag(self, tag, new):
+        """
+        Rename tag /tag/ to /new/.
+
+        Return:
+            True if tag was renamed.
+            False if another tag already existed with name /new/ or it is
+                otherwise invalid (there are no other checks currently).
+        """
+        tag_exists_check = self.session.query(Tag).filter(
+                Tag.text == new).one_or_none()
+        if tag_exists_check is not None:
+            return False
+
+        tag_obj = self.session.query(Tag).filter(Tag.text == tag).one()
+        tag_obj.text = new
+        self.session.commit()
+        return True
+
     def deleteTag(self, tag):
         """
         Delete the /tag/ from all bookmarks.
@@ -308,14 +327,32 @@ class MainWindow(QMainWindow):
         QDesktopServices.openUrl(QUrl(self.form.urlBox.text()))
 
     def onRenameTag(self):
-        pass
-
-    def onDeleteTag(self):
         tags = [unicode(i.text())
                 for i in self.form.tagList.selectedItems()]
         if len(tags) != 1:
             utils.errorBox("You must select exactly one tag.",
                            "Cannot rename zero or multiple tags")
+            return
+        tag = tags[0]
+
+        new, ok = utils.inputBox("New name for tag:", "Rename tag", tag)
+        if ok:
+            if self.tableModel.renameTag(tag, new):
+                self.resetTagList()
+                self.fillEditPane()
+            else:
+                utils.errorBox("A tag by that name already exists.",
+                               "Cannot rename tag")
+        else:
+            return
+
+
+    def onDeleteTag(self):
+        tags = [unicode(i.text())
+                for i in self.form.tagList.selectedItems()]
+        if len(tags) != 1:
+            utils.errorBox("Sorry, you currently cannot delete tags in bulk.",
+                           "Cannot delete zero or multiple tags")
             return
 
         tag = tags[0]

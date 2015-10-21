@@ -331,6 +331,7 @@
      <string>Ta&amp;g</string>
     </property>
     <addaction name="actionRenameTag"/>
+    <addaction name="actionMerge_into"/>
     <addaction name="actionDeleteTag"/>
    </widget>
    <addaction name="menu_File"/>
@@ -386,6 +387,11 @@
   <action name="actionRenameTag">
    <property name="text">
     <string>&amp;Rename</string>
+   </property>
+  </action>
+  <action name="actionMerge_into">
+   <property name="text">
+    <string>&amp;Merge into...</string>
    </property>
   </action>
  </widget>
