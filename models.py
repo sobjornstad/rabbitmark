@@ -31,3 +31,6 @@ class Tag(Base):
 
     def __str__(self):
         return self.text
+
+    def __repr__(self):
+        return "<Tag '%s'>" % self.text

@@ -326,8 +326,16 @@
     <addaction name="separator"/>
     <addaction name="actionDelete"/>
    </widget>
+   <widget class="QMenu" name="menuTag">
+    <property name="title">
+     <string>Ta&amp;g</string>
+    </property>
+    <addaction name="actionRenameTag"/>
+    <addaction name="actionDeleteTag"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBookmark"/>
+   <addaction name="menuTag"/>
   </widget>
   <action name="action_Quit">
    <property name="text">
@@ -368,6 +376,16 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionDeleteTag">
+   <property name="text">
+    <string>&amp;Delete</string>
+   </property>
+  </action>
+  <action name="actionRenameTag">
+   <property name="text">
+    <string>&amp;Rename</string>
    </property>
   </action>
  </widget>

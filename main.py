@@ -1,4 +1,4 @@
-#TODO: Unsaved changes can get lost when quitting (not un*commited*, unsaved entirely)
+#TODO: It should not be possible to delete a bookmark with none selected.
 
 import sys
 
@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 from PyQt4.QtGui import QApplication, QMainWindow, QItemSelectionModel, \
-        QDesktopServices, QShortcut, QKeySequence
+        QDesktopServices, QShortcut, QKeySequence, QMessageBox
 from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL, QUrl, QSize, \
         QVariant
 
@@ -68,16 +68,6 @@ class BookmarkTableModel(QAbstractTableModel):
         self.L.sort(key=key, reverse=rev)
         self.endResetModel()
 
-    # def setData(self, index, value, role):
-    #     colNum = index.column()
-    #     bookmarkNum = index.row()
-    #     mark = self.L[bookmarkNum]
-    #     value = unicode(value.toString())
-
-    #     if colNum == 0:
-    #         pass bla bla
-    #     self.emit(QtCore.SIGNAL("dataChanged"))
-    #     return True
 
     ### Custom methods ###
     def indexFromPk(self, pk):
@@ -174,6 +164,14 @@ class BookmarkTableModel(QAbstractTableModel):
         #self.emit(SIGNAL("dataChanged"))
         return nextObj.id
 
+    def deleteTag(self, tag):
+        """
+        Delete the /tag/ from all bookmarks.
+        """
+        tag_obj = self.session.query(Tag).filter(Tag.text == tag).one()
+        self.session.delete(tag_obj)
+        self.session.commit()
+
     def saveIfEdited(self, mark, content):
         """
         If the content in 'content' differs from the data in the db obj
@@ -238,6 +236,9 @@ class MainWindow(QMainWindow):
         self.form.actionNew.triggered.connect(self.onAddBookmark)
         self.form.actionNew_from_clipboard.triggered.connect(
                 self.onAddBookmarkFromClipboard)
+        self.form.actionRenameTag.triggered.connect(self.onRenameTag)
+        self.form.actionDeleteTag.triggered.connect(self.onDeleteTag)
+
         self.form.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         self.form.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
         #self.form.tagsSaveButton.
@@ -248,9 +249,6 @@ class MainWindow(QMainWindow):
         findShortcut = QShortcut(QKeySequence("Ctrl+F"), self.form.searchBox)
         findShortcut.connect(findShortcut, SIGNAL("activated()"),
                              self.form.searchBox.setFocus)
-        # addShortcut = QShortcut(QKeySequence("Ctrl+N"), self.form.bookmarkTable)
-        # addShortcut.connect(addShortcut, SIGNAL("activated()"),
-        #                     self.onAddBookmark)
 
         # set up data table
         self.tableView = self.form.bookmarkTable
@@ -309,6 +307,33 @@ class MainWindow(QMainWindow):
     def openUrl(self):
         QDesktopServices.openUrl(QUrl(self.form.urlBox.text()))
 
+    def onRenameTag(self):
+        pass
+
+    def onDeleteTag(self):
+        tags = [unicode(i.text())
+                for i in self.form.tagList.selectedItems()]
+        if len(tags) != 1:
+            utils.errorBox("You must select exactly one tag.",
+                           "Cannot rename zero or multiple tags")
+            return
+
+        tag = tags[0]
+        if tag == NOTAGS:
+            utils.errorBox("You cannot delete '%s'. It is not a tag; rather, "
+                           "it indicates that you would like to search for "
+                           "items that do not have any tags." % NOTAGS,
+                           "Not deleteable")
+            return
+
+        r = utils.questionBox("This will permanently delete the tag '%s' from "
+                              "all of your bookmarks. Are you sure you want "
+                              "to continue?" % tag, "Delete tag?")
+        if r == QMessageBox.Yes:
+            self.tableModel.deleteTag(tag)
+            self.resetTagList()
+            self.fillEditPane()
+
     def resetTagList(self):
         """
         Update the tag list widget to match the current state of the db.
@@ -341,9 +366,10 @@ class MainWindow(QMainWindow):
         if old in (sf.nameBox, sf.urlBox, sf.descriptionBox, sf.tagsBox):
             mark = self.tableModel.getObj(self.tableView.currentIndex())
             QApplication.processEvents()
+            if mark is None:
+                return # nothing is selected
             if self.tableModel.saveIfEdited(mark, self.mRepr()):
                 self.resetTagList()
-
 
     def doUpdateForSearch(self):
         """
