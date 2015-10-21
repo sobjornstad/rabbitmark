@@ -164,6 +164,9 @@
            <property name="sortingEnabled">
             <bool>true</bool>
            </property>
+           <attribute name="horizontalHeaderDefaultSectionSize">
+            <number>250</number>
+           </attribute>
            <attribute name="horizontalHeaderHighlightSections">
             <bool>false</bool>
            </attribute>
@@ -318,6 +321,9 @@
     <property name="title">
      <string>Book&amp;mark</string>
     </property>
+    <addaction name="actionNew"/>
+    <addaction name="actionNew_from_clipboard"/>
+    <addaction name="separator"/>
     <addaction name="actionDelete"/>
    </widget>
    <addaction name="menu_File"/>
@@ -335,8 +341,33 @@
    <property name="text">
     <string>Delete</string>
    </property>
+   <property name="toolTip">
+    <string>Permanently delete the currently selected bookmark.</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+Shift+Del</string>
+   </property>
+  </action>
+  <action name="actionNew_from_clipboard">
+   <property name="text">
+    <string>New from &amp;clipboard</string>
+   </property>
+   <property name="toolTip">
+    <string>Create a new bookmark, pasting your clipboard as the URL.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+N</string>
+   </property>
+  </action>
+  <action name="actionNew">
+   <property name="text">
+    <string>&amp;New</string>
+   </property>
+   <property name="toolTip">
+    <string>Create a new bookmark.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
    </property>
   </action>
  </widget>

@@ -9,10 +9,12 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from PyQt4.QtGui import QApplication, QMainWindow, QItemSelectionModel, \
         QDesktopServices, QShortcut, QKeySequence
-from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL, QUrl
+from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL, QUrl, QSize, \
+        QVariant
 
 from forms.main import Ui_MainWindow
 from models import Bookmark, Tag, Base
+import utils
 
 NOTAGS = "(no tags)"
 
@@ -35,7 +37,7 @@ class BookmarkTableModel(QAbstractTableModel):
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
     def headerData(self, col, orientation, role):
-        if (orientation == Qt.Horizontal and role == Qt.DisplayRole):
+        if (role == Qt.DisplayRole and orientation == Qt.Horizontal):
             return self.headerdata[col]
         else:
             return None
@@ -84,12 +86,13 @@ class BookmarkTableModel(QAbstractTableModel):
                 return self.index(row, 0)
         return None
 
-    def makeNewBookmark(self):
+    def makeNewBookmark(self, url="http://"):
         """
-        Create a new bookmark with boilerplate. Return the object created.
+        Create a new bookmark with boilerplate and the provided /url/ or
+        'http://' if none. Return the object created.
         """
         new_name = ""
-        new_url = "http://"
+        new_url = url
         new_tags = ""
         new_descr = ""
 
@@ -134,9 +137,7 @@ class BookmarkTableModel(QAbstractTableModel):
                         Bookmark.url.like(nameText),
                         Bookmark.description.like(nameText)
                        ),
-                    or_(
-                        *tag_query
-                       )
+                    or_(*tag_query)
                 ))
 
         for mark in query:
@@ -234,6 +235,9 @@ class MainWindow(QMainWindow):
         # set up actions
         self.form.action_Quit.triggered.connect(self.quit)
         self.form.actionDelete.triggered.connect(self.deleteCurrent)
+        self.form.actionNew.triggered.connect(self.onAddBookmark)
+        self.form.actionNew_from_clipboard.triggered.connect(
+                self.onAddBookmarkFromClipboard)
         self.form.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         self.form.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
         #self.form.tagsSaveButton.
@@ -244,9 +248,9 @@ class MainWindow(QMainWindow):
         findShortcut = QShortcut(QKeySequence("Ctrl+F"), self.form.searchBox)
         findShortcut.connect(findShortcut, SIGNAL("activated()"),
                              self.form.searchBox.setFocus)
-        addShortcut = QShortcut(QKeySequence("Ctrl+N"), self.form.bookmarkTable)
-        addShortcut.connect(addShortcut, SIGNAL("activated()"),
-                            self.onAddBookmark)
+        # addShortcut = QShortcut(QKeySequence("Ctrl+N"), self.form.bookmarkTable)
+        # addShortcut.connect(addShortcut, SIGNAL("activated()"),
+        #                     self.onAddBookmark)
 
         # set up data table
         self.tableView = self.form.bookmarkTable
@@ -278,8 +282,17 @@ class MainWindow(QMainWindow):
         self.tableModel.commit()
         sys.exit(0)
 
-    def onAddBookmark(self):
-        newMark = self.tableModel.makeNewBookmark()
+    def onAddBookmarkFromClipboard(self):
+        pastedUrl = unicode(QApplication.clipboard().text()).strip()
+        if not '://' in pastedUrl:
+            utils.warningBox("No protocol (e.g., http://) in URL. Adding "
+                             "http:// to beginning. You may wish to check "
+                             "the URL.", "URL possibly invalid")
+            pastedUrl = 'http://' + pastedUrl
+        self.onAddBookmark(urltext=pastedUrl)
+
+    def onAddBookmark(self, urltext="http://"):
+        newMark = self.tableModel.makeNewBookmark(urltext)
         self.doUpdateForSearch()
         index = self.tableModel.indexFromPk(newMark.id)
         self.tableView.setCurrentIndex(index)
@@ -288,7 +301,6 @@ class MainWindow(QMainWindow):
     def deleteCurrent(self):
         index = self.tableView.currentIndex()
         nextPk = self.tableModel.deleteBookmark(index)
-        print "nextPk is %r" % nextPk
         index = self.tableModel.indexFromPk(nextPk)
         self.tableView.setCurrentIndex(index)
 
