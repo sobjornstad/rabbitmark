@@ -158,6 +158,9 @@
            <property name="selectionBehavior">
             <enum>QAbstractItemView::SelectRows</enum>
            </property>
+           <property name="sortingEnabled">
+            <bool>true</bool>
+           </property>
            <attribute name="horizontalHeaderHighlightSections">
             <bool>false</bool>
            </attribute>
@@ -296,7 +299,14 @@
     </property>
     <addaction name="action_Quit"/>
    </widget>
+   <widget class="QMenu" name="menuBookmark">
+    <property name="title">
+     <string>Bookmark</string>
+    </property>
+    <addaction name="actionDelete"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menuBookmark"/>
   </widget>
   <action name="action_Quit">
    <property name="text">
@@ -304,6 +314,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionDelete">
+   <property name="text">
+    <string>Delete</string>
    </property>
   </action>
  </widget>

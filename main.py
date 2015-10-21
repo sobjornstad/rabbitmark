@@ -12,6 +12,8 @@ from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL, QUrl
 from forms.main import Ui_MainWindow
 from models import Bookmark, Tag, Base
 
+NOTAGS = "(no tags)"
+
 class BookmarkTableModel(QAbstractTableModel):
     def __init__(self, parent, Session, *args):
         QAbstractTableModel.__init__(self)
@@ -49,6 +51,19 @@ class BookmarkTableModel(QAbstractTableModel):
         else:
             return ', '.join([i.text for i in mark.tags_rel])
 
+    def sort(self, column, order=Qt.AscendingOrder):
+        rev = (order != Qt.AscendingOrder)
+
+        if column == 0:
+            key = lambda i: i.name
+        elif column == 1:
+            print "DEBUG: Sorting by this column is not supported."
+            key = lambda i: None
+
+        self.beginResetModel()
+        self.L.sort(key=key, reverse=rev)
+        self.endResetModel()
+
     # def setData(self, index, value, role):
     #     colNum = index.column()
     #     bookmarkNum = index.row()
@@ -67,6 +82,30 @@ class BookmarkTableModel(QAbstractTableModel):
                 return self.index(row, 0)
         return None
 
+    def makeNewBookmark(self):
+        """
+        Create a new bookmark with boilerplate. Return the object created.
+        """
+        new_name = ""
+        new_url = "http://"
+        new_tags = ""
+        new_descr = ""
+
+        g_bookmark = Bookmark(name=new_name, url=new_url, description=new_descr)
+        self.session.add(g_bookmark)
+
+        tag_list = [tag.strip() for tag in new_tags.split(',')]
+        for tag in tag_list:
+            existingTag = self.session.query(Tag).filter(
+                    Tag.text == tag).first()
+            if existingTag:
+                g_bookmark.tags_rel.append(existingTag)
+            else:
+                new_tag = Tag(text=tag)
+                g_bookmark.tags_rel.append(new_tag)
+        self.session.flush() # we'll presumably commit as soon as we edit it
+        return g_bookmark
+
     def updateForSearch(self, searchText, tags):
         nameText = "%" + searchText + "%"
         self.beginResetModel()
@@ -80,6 +119,12 @@ class BookmarkTableModel(QAbstractTableModel):
 
         # NOTE: without my even having to do anything, this behaves the way I
         # want it to when nothing is selected (equivalent to everything).
+        tag_query = []
+        if NOTAGS in tags:
+            tags.remove(NOTAGS)
+            tag_query = [Bookmark.tags_rel == None]
+        if len(tags) > 0:
+            tag_query += [Bookmark.tags_rel.any(Tag.text.in_(allowed_tags))]
         query = self.session.query(Bookmark).filter(
                 and_(
                     or_(
@@ -87,13 +132,44 @@ class BookmarkTableModel(QAbstractTableModel):
                         Bookmark.url.like(nameText),
                         Bookmark.description.like(nameText)
                        ),
-                    Bookmark.tags_rel.any(Tag.text.in_(allowed_tags))
+                    or_(
+                        *tag_query
+                       )
                 ))
 
         for mark in query:
             self.L.append(mark)
         self.emit(SIGNAL("dataChanged"))
         self.endResetModel()
+
+    def deleteBookmark(self, index):
+        """
+        Delete the bookmark at /index/ in the table. Return the pk of the entry
+        above it to select after deletion (below if the top), or None if this
+        is the only entry.
+        """
+        row = index.row()
+        mark = self.L[row]
+        try:
+            if (row - 1) >= 0:
+                nextObj = self.L[row-1]
+            else:
+                # index was negative, this is the top entry; go below
+                nextObj = self.L[row+1]
+        except IndexError:
+            # there are no other items
+            nextObj = None
+        self.session.delete(mark)
+        self.session.commit()
+        self.beginResetModel()
+        #TODO: When using beginRemoveRows(), a blank row is left in the table.
+        # This is a little inconvenient, but it *works* for now.
+        #self.beginRemoveRows(index, row, row)
+        del self.L[row]
+        self.endResetModel()
+        #self.endRemoveRows()
+        #self.emit(SIGNAL("dataChanged"))
+        return nextObj.id
 
     def saveIfEdited(self, mark, content):
         """
@@ -107,7 +183,6 @@ class BookmarkTableModel(QAbstractTableModel):
                 mark.description == content['descr'] and
                 mark.url == content['url'] and
                 [i.text for i in mark.tags_rel] == content['tags']):
-            print "need save!"
             mark.name = content['name']
             mark.description = content['descr']
             mark.url = content['url']
@@ -124,10 +199,8 @@ class BookmarkTableModel(QAbstractTableModel):
                     self.session.add(new_tag)
                     mark.tags_rel.append(new_tag)
             # remove tags that are no longer used
-            deletedDirty = False
             for tag in mark.tags_rel:
                 if tag.text not in new_tags:
-                    deletedDirty = True
                     self.session.delete(tag)
             self.session.commit()
             return True
@@ -138,6 +211,14 @@ class BookmarkTableModel(QAbstractTableModel):
             return self.L[index.row()]
         except IndexError:
             return None
+
+    def commit(self):
+        """
+        Commit all changes. Should be called before quitting or doing anything
+        similarly destructive to the memory image to make sure that no
+        transactions are still active.
+        """
+        self.session.commit()
 
 
 class MainWindow(QMainWindow):
@@ -150,12 +231,14 @@ class MainWindow(QMainWindow):
 
         # set up actions
         self.form.action_Quit.triggered.connect(self.quit)
+        self.form.actionDelete.triggered.connect(self.deleteCurrent)
         self.form.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         self.form.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
         #self.form.tagsSaveButton.
         #self.form.tagsLoadButton.
         self.form.copyUrlButton.clicked.connect(self.copyUrl)
         self.form.browseUrlButton.clicked.connect(self.openUrl)
+        self.form.addButton.clicked.connect(self.onAddBookmark)
 
         # set up data table
         self.tableView = self.form.bookmarkTable
@@ -174,14 +257,29 @@ class MainWindow(QMainWindow):
         self.form.searchBox.textChanged.connect(self.doUpdateForSearch)
         self.form.tagList.itemSelectionChanged.connect(self.doUpdateForSearch)
         self.doUpdateForSearch()
+        self.tableModel.sort(0)
 
     def closeEvent(self, event):
         "Catch click of the X button, etc., and properly quit."
         self.quit()
 
     def quit(self):
-        # commit? we don't have a session in here
+        self.tableModel.commit()
         sys.exit(0)
+
+    def onAddBookmark(self):
+        newMark = self.tableModel.makeNewBookmark()
+        self.doUpdateForSearch()
+        index = self.tableModel.indexFromPk(newMark.id)
+        self.tableView.setCurrentIndex(index)
+        self.form.nameBox.setFocus()
+
+    def deleteCurrent(self):
+        index = self.tableView.currentIndex()
+        nextPk = self.tableModel.deleteBookmark(index)
+        print "nextPk is %r" % nextPk
+        index = self.tableModel.indexFromPk(nextPk)
+        self.tableView.setCurrentIndex(index)
 
     def copyUrl(self):
         QApplication.clipboard().setText(self.form.urlBox.text())
@@ -258,6 +356,10 @@ class MainWindow(QMainWindow):
             self.form.descriptionBox.setText(mark.description)
             tags = ', '.join([i.text for i in mark.tags_rel])
             self.form.tagsBox.setText(tags)
+            # If a name or URL is too long to fit in the box, this will make
+            # the box show the beginning of it rather than the end.
+            for i in (self.form.nameBox, self.form.urlBox, self.form.tagsBox):
+                i.setCursorPosition(0)
 
     def tagsSelect(self, what):
         if what in ('none', 'all'):
@@ -282,6 +384,7 @@ class MainWindow(QMainWindow):
 def scan_tags(Session):
     session = Session()
     tag_list = [unicode(i) for i in session.query(Tag).all()]
+    tag_list.append(NOTAGS)
     return tag_list
 
 def make_Session():
