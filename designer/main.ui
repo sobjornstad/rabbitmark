@@ -155,6 +155,9 @@
              <verstretch>3</verstretch>
             </sizepolicy>
            </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::SingleSelection</enum>
+           </property>
            <property name="selectionBehavior">
             <enum>QAbstractItemView::SelectRows</enum>
            </property>
@@ -217,15 +220,27 @@
               </item>
               <item>
                <widget class="QPushButton" name="copyUrlButton">
+                <property name="toolTip">
+                 <string>Shortcut: Ctrl-Shift-C</string>
+                </property>
                 <property name="text">
-                 <string>Copy</string>
+                 <string>&amp;Copy</string>
+                </property>
+                <property name="shortcut">
+                 <string>Ctrl+Shift+C</string>
                 </property>
                </widget>
               </item>
               <item>
                <widget class="QPushButton" name="browseUrlButton">
+                <property name="toolTip">
+                 <string>Shortcut: Ctrl-B</string>
+                </property>
                 <property name="text">
-                 <string>Browse to</string>
+                 <string>&amp;Browse to</string>
+                </property>
+                <property name="shortcut">
+                 <string>Ctrl+B</string>
                 </property>
                </widget>
               </item>
@@ -301,7 +316,7 @@
    </widget>
    <widget class="QMenu" name="menuBookmark">
     <property name="title">
-     <string>Bookmark</string>
+     <string>Book&amp;mark</string>
     </property>
     <addaction name="actionDelete"/>
    </widget>
@@ -319,6 +334,9 @@
   <action name="actionDelete">
    <property name="text">
     <string>Delete</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+Del</string>
    </property>
   </action>
  </widget>

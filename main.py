@@ -1,3 +1,5 @@
+#TODO: Unsaved changes can get lost when quitting (not un*commited*, unsaved entirely)
+
 import sys
 
 from sqlalchemy import create_engine, event, and_, or_
@@ -6,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 from PyQt4.QtGui import QApplication, QMainWindow, QItemSelectionModel, \
-        QDesktopServices
+        QDesktopServices, QShortcut, QKeySequence
 from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL, QUrl
 
 from forms.main import Ui_MainWindow
@@ -239,6 +241,12 @@ class MainWindow(QMainWindow):
         self.form.copyUrlButton.clicked.connect(self.copyUrl)
         self.form.browseUrlButton.clicked.connect(self.openUrl)
         self.form.addButton.clicked.connect(self.onAddBookmark)
+        findShortcut = QShortcut(QKeySequence("Ctrl+F"), self.form.searchBox)
+        findShortcut.connect(findShortcut, SIGNAL("activated()"),
+                             self.form.searchBox.setFocus)
+        addShortcut = QShortcut(QKeySequence("Ctrl+N"), self.form.bookmarkTable)
+        addShortcut.connect(addShortcut, SIGNAL("activated()"),
+                            self.onAddBookmark)
 
         # set up data table
         self.tableView = self.form.bookmarkTable
@@ -264,6 +272,9 @@ class MainWindow(QMainWindow):
         self.quit()
 
     def quit(self):
+        # fake changing focus: the widget name for new is arbitrary,
+        # one of the editable boxes is required for old
+        self.maybeSaveBookmark(old=self.form.nameBox, new=self.form.nameBox)
         self.tableModel.commit()
         sys.exit(0)
 
@@ -287,10 +298,20 @@ class MainWindow(QMainWindow):
         QDesktopServices.openUrl(QUrl(self.form.urlBox.text()))
 
     def resetTagList(self):
+        """
+        Update the tag list widget to match the current state of the db.
+        """
+        # Get updated tag list.
         self.tags = scan_tags(self.Session)
-        for i in range(self.form.tagList.count()):
-            if self.form.tagList.item(i).text() not in self.tags:
-                self.form.tagList.takeItem(i)
+
+        # Remove tags that no longer exist.
+        toRemove = [self.form.tagList.item(i)
+                    for i in range(self.form.tagList.count())
+                    if self.form.tagList.item(i).text() not in self.tags]
+        for i in toRemove:
+            self.form.tagList.takeItem(self.form.tagList.row(i))
+
+        # Add new tags and resort list.
         for i in self.tags:
             if not self.form.tagList.findItems(i, Qt.MatchExactly):
                 self.form.tagList.addItem(i)
@@ -299,9 +320,10 @@ class MainWindow(QMainWindow):
     def maybeSaveBookmark(self, old, new):
         """
         If focus changed away from one of the editable boxes, update state of
-        its associated db object.
+        the db object associated with the currently selected bookmark.
 
-        Called by signal set in startQt() when any focus changes.
+        Called by signal set in startQt() when any focus changes, as well as
+        before quitting.
         """
         sf = self.form
         if old in (sf.nameBox, sf.urlBox, sf.descriptionBox, sf.tagsBox):
@@ -388,9 +410,9 @@ def scan_tags(Session):
     return tag_list
 
 def make_Session():
-    engine = create_engine('sqlite:///testdb.db')
+    engine = create_engine('sqlite:///sorenmarks.db')
     Session = sessionmaker(bind=engine)
-    Base.metadata.create_all(engine) # will not recreate existing db's
+    Base.metadata.create_all(engine) # will not recreate existing tables/dbs
     return Session
 
 # http://stackoverflow.com/questions/9671490/
@@ -401,101 +423,6 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.close()
 
-
-def dbTest():
-    Session = make_Session()
-    session = Session()
-
-    while True:
-        print "\nBookmark Database"
-        print "Would you like to:"
-        print "1) Add a bookmark"
-        print "2) Search for a bookmark"
-        print "3) Delete a bookmark"
-        print "4) Test tag editing"
-        print "0) Quit"
-        what_do = raw_input("> ")
-
-        if what_do == "1":
-            print "We're going to add a bookmark. Where shall it be?"
-            new_name = raw_input("Name: ")
-            new_url = raw_input("Url: ")
-            new_tags = raw_input("Tags: ")
-            new_descr = raw_input("Description: ")
-
-            g_bookmark = Bookmark(name=new_name, url=new_url, description=new_descr)
-            session.add(g_bookmark)
-
-            tag_list = [tag.strip() for tag in new_tags.split(',')]
-            for tag in tag_list:
-                existingTag = session.query(Tag).filter(Tag.text == tag).first()
-                if existingTag:
-                    g_bookmark.tags_rel.append(existingTag)
-                else:
-                    new_tag = Tag(text=tag)
-                    g_bookmark.tags_rel.append(new_tag)
-            print "Added bookmark with name %s." % new_name
-
-        elif what_do == "2":
-            search_for = raw_input("Name (substr search): ")
-            search_for = "%" + search_for + "%"
-            for bookmark in session.query(Bookmark).filter(
-                    Bookmark.name.like(search_for)):
-                print "Name: %s" % bookmark.name
-                print "URL : %s" % bookmark.url
-                print "Tags: %r" % [i.text for i in bookmark.tags_rel]
-                print "Description:"
-                print bookmark.description
-                print ""
-
-        elif what_do == "3":
-            search_for = raw_input("Delete name (substr search): ")
-            search_for = "%" + search_for + "%"
-            for bookmark in session.query(Bookmark).filter(
-                    Bookmark.name.like(search_for)):
-                print "Deleting name '%s'...sure?" % bookmark.name
-                try:
-                    raw_input("(^C to cancel)")
-                except KeyboardInterrupt:
-                    break
-                session.delete(bookmark)
-
-        elif what_do == "4":
-            print 'Adjusting tags for "Lillian".'
-            mark = session.query(Bookmark).filter(Bookmark.name == 'Lillian').one()
-            new_tags_raw = raw_input("New tags: ")
-            new_tags = [i.strip() for i in new_tags_raw.split(',')]
-
-            for tag in new_tags:
-                existingTag = session.query(Tag).filter(Tag.text == tag).first()
-                if existingTag:
-                    mark.tags_rel.append(existingTag)
-                else:
-                    new_tag = Tag(text=tag)
-                    mark.tags_rel.append(new_tag)
-            for tag in mark.tags_rel:
-                if tag.text not in new_tags:
-                    session.delete(tag)
-
-
-            #for tag in new_tags:
-                #existingTag = session.query(Tag).filter(Tag.text == tag).first()
-                ##if not existingTag:
-                    #session
-
-
-
-            for tag in mark.tags_rel:
-                print tag.text
-
-
-        elif what_do == "0":
-            print "Exiting."
-            session.commit()
-            break
-        else:
-            print "I didn't get that."
-
 def startQt():
     app = QApplication(sys.argv)
     mw = MainWindow()
@@ -504,5 +431,4 @@ def startQt():
     app.exec_()
 
 if __name__ == '__main__':
-    #dbTest()
     startQt()
