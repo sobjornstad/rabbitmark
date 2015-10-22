@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>525</width>
+    <height>305</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>WayBackMachine Search</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_3">
+   <item>
+    <widget class="QLabel" name="snapshotLabel">
+     <property name="text">
+      <string>Please try the following snapshot:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLineEdit" name="urlBox">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="copyButton">
+       <property name="text">
+        <string>Copy</string>
+       </property>
+       <property name="shortcut">
+        <string>Ctrl+Shift+C</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="browseButton">
+       <property name="text">
+        <string>Browse to</string>
+       </property>
+       <property name="shortcut">
+        <string>Ctrl+B</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QLabel" name="stateLabel">
+     <property name="text">
+      <string>There are 3 older and 6 newer snapshots.
+How do you want to proceed?</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string/>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QRadioButton" name="useRadio">
+          <property name="text">
+           <string>&amp;Use this snapshot as this site's URL in my database</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="newerRadio">
+          <property name="text">
+           <string>Try a &amp;newer snapshot (this one works, but seems outdated)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="olderRadio">
+          <property name="text">
+           <string>Try an &amp;older snapshot (this one doesn't work)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="backupRadio">
+          <property name="text">
+           <string>&amp;Back up to the last snapshot and increase search range</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="cancelRadio">
+          <property name="text">
+           <string>&amp;Cancel and keep the original URL</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="okButton">
+       <property name="text">
+        <string>OK</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+       <property name="default">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

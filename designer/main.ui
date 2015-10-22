@@ -349,7 +349,7 @@
   </action>
   <action name="actionDelete">
    <property name="text">
-    <string>Delete</string>
+    <string>&amp;Delete</string>
    </property>
    <property name="toolTip">
     <string>Permanently delete the currently selected bookmark.</string>
@@ -397,7 +397,7 @@
   </action>
   <action name="actionWayBack">
    <property name="text">
-    <string>Find WayBackMachine URL</string>
+    <string>Find in &amp;WayBackMachine...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+W</string>
