@@ -324,6 +324,7 @@
     <addaction name="actionNew"/>
     <addaction name="actionNew_from_clipboard"/>
     <addaction name="separator"/>
+    <addaction name="actionWayBack"/>
     <addaction name="actionDelete"/>
    </widget>
    <widget class="QMenu" name="menuTag">
@@ -392,6 +393,14 @@
   <action name="actionMerge_into">
    <property name="text">
     <string>&amp;Merge into...</string>
+   </property>
+  </action>
+  <action name="actionWayBack">
+   <property name="text">
+    <string>Find WayBackMachine URL</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
    </property>
   </action>
  </widget>

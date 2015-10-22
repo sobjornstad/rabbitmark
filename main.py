@@ -1,5 +1,8 @@
 #TODO: It should not be possible to delete a bookmark with none selected.
+#TODO: Don't allow rich text.
 
+import datetime
+import requests
 import sys
 
 from sqlalchemy import create_engine, event, and_, or_
@@ -85,6 +88,7 @@ class BookmarkTableModel(QAbstractTableModel):
         new_url = url
         new_tags = ""
         new_descr = ""
+        print "new_url is %s" % url
 
         g_bookmark = Bookmark(name=new_name, url=new_url, description=new_descr)
         self.session.add(g_bookmark)
@@ -132,6 +136,7 @@ class BookmarkTableModel(QAbstractTableModel):
 
         for mark in query:
             self.L.append(mark)
+        self.sort(0)
         self.emit(SIGNAL("dataChanged"))
         self.endResetModel()
 
@@ -153,7 +158,7 @@ class BookmarkTableModel(QAbstractTableModel):
             # there are no other items
             nextObj = None
         self.session.delete(mark)
-        self.session.commit()
+        self.commit()
         self.beginResetModel()
         #TODO: When using beginRemoveRows(), a blank row is left in the table.
         # This is a little inconvenient, but it *works* for now.
@@ -180,7 +185,7 @@ class BookmarkTableModel(QAbstractTableModel):
 
         tag_obj = self.session.query(Tag).filter(Tag.text == tag).one()
         tag_obj.text = new
-        self.session.commit()
+        self.commit()
         return True
 
     def deleteTag(self, tag):
@@ -189,7 +194,7 @@ class BookmarkTableModel(QAbstractTableModel):
         """
         tag_obj = self.session.query(Tag).filter(Tag.text == tag).one()
         self.session.delete(tag_obj)
-        self.session.commit()
+        self.commit()
 
     def saveIfEdited(self, mark, content):
         """
@@ -222,7 +227,7 @@ class BookmarkTableModel(QAbstractTableModel):
             for tag in mark.tags_rel:
                 if tag.text not in new_tags:
                     self.session.delete(tag)
-            self.session.commit()
+            self.commit()
             return True
         return False
 
@@ -257,6 +262,7 @@ class MainWindow(QMainWindow):
                 self.onAddBookmarkFromClipboard)
         self.form.actionRenameTag.triggered.connect(self.onRenameTag)
         self.form.actionDeleteTag.triggered.connect(self.onDeleteTag)
+        self.form.actionWayBack.triggered.connect(self.onWayBackMachine)
 
         self.form.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         self.form.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
@@ -286,7 +292,6 @@ class MainWindow(QMainWindow):
         self.form.searchBox.textChanged.connect(self.doUpdateForSearch)
         self.form.tagList.itemSelectionChanged.connect(self.doUpdateForSearch)
         self.doUpdateForSearch()
-        self.tableModel.sort(0)
 
     def closeEvent(self, event):
         "Catch click of the X button, etc., and properly quit."
@@ -308,7 +313,8 @@ class MainWindow(QMainWindow):
             pastedUrl = 'http://' + pastedUrl
         self.onAddBookmark(urltext=pastedUrl)
 
-    def onAddBookmark(self, urltext="http://"):
+    def onAddBookmark(self, isChecked=False, urltext="http://"):
+        # isChecked is not used
         newMark = self.tableModel.makeNewBookmark(urltext)
         self.doUpdateForSearch()
         index = self.tableModel.indexFromPk(newMark.id)
@@ -319,12 +325,44 @@ class MainWindow(QMainWindow):
         index = self.tableView.currentIndex()
         nextPk = self.tableModel.deleteBookmark(index)
         index = self.tableModel.indexFromPk(nextPk)
+        self.resetTagList()
         self.tableView.setCurrentIndex(index)
 
     def copyUrl(self):
         QApplication.clipboard().setText(self.form.urlBox.text())
     def openUrl(self):
         QDesktopServices.openUrl(QUrl(self.form.urlBox.text()))
+
+    def onWayBackMachine(self):
+        mark = self.tableModel.getObj(self.tableView.currentIndex())
+        site = mark.url
+        requestUrl = "http://web.archive.org/cdx/search/cdx?url=%s&output=json"
+        result = requests.get(requestUrl % site)
+        try:
+            archives = result.json()
+        except ValueError: # no results, blank return
+            print "Sorry, nothing archived for that URL."
+            return
+        if not archives: # alternative form of no-results
+            print "Sorry, nothing archived for that URL."
+            return
+
+        print "Good news: we found some snapshots for you."
+        archived = []
+        for i in archives[1:]: # first row is headers
+            timestamp, pagePath = i[1], i[2]
+            formattedTimestamp = datetime.datetime.strptime(
+                    timestamp, '%Y%m%d%H%M%S').strftime('%Y-%m-%d')
+            archivedUrl = "http://web.archive.org/web/%s/%s" % (
+                    timestamp, pagePath)
+            archived.append((formattedTimestamp, timestamp, archivedUrl))
+            print "%s :: %s" % (formattedTimestamp, archivedUrl)
+
+        # The next step is to develop a dialog that allows the user to see the
+        # different snapshots available and (preferably with a sort of binary
+        # search algorithm) select one to use and replace the contents of the
+        # URL field with.
+
 
     def onRenameTag(self):
         tags = [unicode(i.text())
@@ -345,7 +383,6 @@ class MainWindow(QMainWindow):
                                "Cannot rename tag")
         else:
             return
-
 
     def onDeleteTag(self):
         tags = [unicode(i.text())
