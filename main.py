@@ -22,6 +22,12 @@ import utils
 NOTAGS = "(no tags)"
 
 class BookmarkTableModel(QAbstractTableModel):
+    """
+    Handles the interface to the database. Currently it *also* handles tag
+    management, which isn't really part of the description of the model; this
+    code should be moved into a TagManager or a set of functions of that
+    description soon.
+    """
     def __init__(self, parent, Session, *args):
         QAbstractTableModel.__init__(self)
         self.parent = parent
@@ -126,6 +132,7 @@ class BookmarkTableModel(QAbstractTableModel):
             tag_query = [Bookmark.tags_rel == None]
         if len(tags) > 0:
             tag_query += [Bookmark.tags_rel.any(Tag.text.in_(allowed_tags))]
+
         query = self.session.query(Bookmark).filter(
                 and_(
                     or_(
@@ -205,7 +212,6 @@ class BookmarkTableModel(QAbstractTableModel):
 
         Returns True if an update was made, False if not.
         """
-        #currentData = self.L[index.row()]
         if not (mark.name == content['name'] and
                 mark.description == content['descr'] and
                 mark.url == content['url'] and
