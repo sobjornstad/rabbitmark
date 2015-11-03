@@ -1,4 +1,3 @@
-#TODO: It should not be possible to delete a bookmark with none selected.
 #TODO: Don't allow rich text in description box.
 #TODO: Add a thingy to check if archive.org URL is *already* used, and if so to
 #      strip out the non-archive.org part and/or do a new snapshot search.
@@ -326,6 +325,10 @@ class MainWindow(QMainWindow):
         self.form.nameBox.setFocus()
 
     def deleteCurrent(self):
+        if not self.sm.hasSelection():
+            utils.errorBox("Please select a bookmark to delete.",
+                           "No bookmark selected")
+            return
         index = self.tableView.currentIndex()
         nextPk = self.tableModel.deleteBookmark(index)
         index = self.tableModel.indexFromPk(nextPk)
@@ -388,29 +391,37 @@ class MainWindow(QMainWindow):
     def onRenameTag(self):
         tags = [unicode(i.text())
                 for i in self.form.tagList.selectedItems()]
-        if len(tags) != 1:
-            utils.errorBox("You must select exactly one tag.",
-                           "Cannot rename zero or multiple tags")
-            return
-        tag = tags[0]
 
-        new, ok = utils.inputBox("New name for tag:", "Rename tag", tag)
-        if ok:
+        if len(tags) < 1:
+            utils.errorBox("Please select a tag to rename.",
+                           "No tag selected")
+            return
+        elif len(tags) > 1:
+            utils.errorBox("Tags cannot be renamed in bulk. Please select"
+                           "exactly one tag.", "Cannot rename multiple tags")
+            return
+
+        tag = tags[0]
+        new, doContinue = utils.inputBox("New name for tag:", "Rename tag", tag)
+        if doContinue:
             if self.tableModel.renameTag(tag, new):
                 self.resetTagList()
                 self.fillEditPane()
             else:
                 utils.errorBox("A tag by that name already exists.",
                                "Cannot rename tag")
-        else:
-            return
 
     def onDeleteTag(self):
         tags = [unicode(i.text())
                 for i in self.form.tagList.selectedItems()]
-        if len(tags) != 1:
+
+        if len(tags) < 1:
+            utils.errorBox("Please select a tag to delete.",
+                           "No tag selected")
+            return
+        elif len(tags) > 1:
             utils.errorBox("Sorry, you currently cannot delete tags in bulk.",
-                           "Cannot delete zero or multiple tags")
+                           "Cannot delete multiple tags")
             return
 
         tag = tags[0]
@@ -732,7 +743,7 @@ def scan_tags(Session):
     return tag_list
 
 def make_Session():
-    engine = create_engine('sqlite:///sorenmarks.db')
+    engine = create_engine('sqlite:///test.db')
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine) # will not recreate existing tables/dbs
     return Session
