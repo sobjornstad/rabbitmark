@@ -1,21 +1,19 @@
 #TODO: It should not be possible to delete a bookmark with none selected.
-#TODO: Don't allow rich text.
+#TODO: Don't allow rich text in description box.
+#TODO: Add a thingy to check if archive.org URL is *already* used, and if so to
+#      strip out the non-archive.org part and/or do a new snapshot search.
 
 import datetime
 import requests
 import sys
-import time
 
 from sqlalchemy import create_engine, event, and_, or_
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 
-from PyQt4.QtGui import QApplication, QMainWindow, QItemSelectionModel, \
-        QDesktopServices, QShortcut, QKeySequence, QMessageBox, QDialog, \
-        QCursor
-from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL, QUrl, QSize, \
-        QVariant
+from PyQt4.QtGui import QApplication, QMainWindow, QDesktopServices, \
+        QShortcut, QKeySequence, QMessageBox, QDialog, QCursor
+from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL, QUrl
 
 from forms.main import Ui_MainWindow
 from forms.archivesearch import Ui_Dialog as Ui_ArchiveDialog
@@ -31,6 +29,7 @@ class BookmarkTableModel(QAbstractTableModel):
         self.Session = Session
         self.session = self.Session()
         self.headerdata = ("Name", "Tags")
+        self.L = None
         self.updateForSearch("", [])
 
     ### Standard reimplemented methods ###
@@ -43,7 +42,7 @@ class BookmarkTableModel(QAbstractTableModel):
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
     def headerData(self, col, orientation, role):
-        if (role == Qt.DisplayRole and orientation == Qt.Horizontal):
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headerdata[col]
         else:
             return None
@@ -59,7 +58,7 @@ class BookmarkTableModel(QAbstractTableModel):
         if col == 0:
             return mark.name
         else:
-            return ', '.join([i.text for i in mark.tags_rel])
+            return ', '.join(i.text for i in mark.tags_rel)
 
     def sort(self, column, order=Qt.AscendingOrder):
         rev = (order != Qt.AscendingOrder)
@@ -93,7 +92,8 @@ class BookmarkTableModel(QAbstractTableModel):
         new_descr = ""
         print "new_url is %s" % url
 
-        g_bookmark = Bookmark(name=new_name, url=new_url, description=new_descr)
+        g_bookmark = Bookmark(name=new_name, url=new_url,
+                              description=new_descr)
         self.session.add(g_bookmark)
 
         tag_list = [tag.strip() for tag in new_tags.split(',')]
@@ -258,25 +258,26 @@ class MainWindow(QMainWindow):
         self.Session = make_Session()
 
         # set up actions
-        self.form.action_Quit.triggered.connect(self.quit)
-        self.form.actionDelete.triggered.connect(self.deleteCurrent)
-        self.form.actionNew.triggered.connect(self.onAddBookmark)
-        self.form.actionNew_from_clipboard.triggered.connect(
+        sf = self.form
+        sf.action_Quit.triggered.connect(self.quit)
+        sf.actionDelete.triggered.connect(self.deleteCurrent)
+        sf.actionNew.triggered.connect(self.onAddBookmark)
+        sf.actionNew_from_clipboard.triggered.connect(
                 self.onAddBookmarkFromClipboard)
-        self.form.actionRenameTag.triggered.connect(self.onRenameTag)
-        self.form.actionDeleteTag.triggered.connect(self.onDeleteTag)
-        self.form.actionWayBack.triggered.connect(self.onWayBackMachine)
+        sf.actionRenameTag.triggered.connect(self.onRenameTag)
+        sf.actionDeleteTag.triggered.connect(self.onDeleteTag)
+        sf.actionWayBack.triggered.connect(self.onWayBackMachine)
 
-        self.form.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
-        self.form.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
+        sf.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
+        sf.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
         #self.form.tagsSaveButton.
         #self.form.tagsLoadButton.
-        self.form.copyUrlButton.clicked.connect(self.copyUrl)
-        self.form.browseUrlButton.clicked.connect(self.openUrl)
-        self.form.addButton.clicked.connect(self.onAddBookmark)
-        findShortcut = QShortcut(QKeySequence("Ctrl+F"), self.form.searchBox)
+        sf.copyUrlButton.clicked.connect(self.copyUrl)
+        sf.browseUrlButton.clicked.connect(self.openUrl)
+        sf.addButton.clicked.connect(self.onAddBookmark)
+        findShortcut = QShortcut(QKeySequence("Ctrl+F"), sf.searchBox)
         findShortcut.connect(findShortcut, SIGNAL("activated()"),
-                             self.form.searchBox.setFocus)
+                             sf.searchBox.setFocus)
 
         # set up data table
         self.tableView = self.form.bookmarkTable
@@ -296,7 +297,7 @@ class MainWindow(QMainWindow):
         self.form.tagList.itemSelectionChanged.connect(self.doUpdateForSearch)
         self.doUpdateForSearch()
 
-    def closeEvent(self, event):
+    def closeEvent(self, evt):
         "Catch click of the X button, etc., and properly quit."
         self.quit()
 
@@ -343,7 +344,7 @@ class MainWindow(QMainWindow):
         if we just want to make sure it will work in the future or save a
         particular version of the page).
 
-        This function requests a list of snapshots from the CDX (more
+        This method requests a list of snapshots from the CDX (more
         complicated) WayBackMachine API on archive.org, then creates a
         WayBackDialog to allow the user to find a snapshot that contains the
         content they were hoping for. Finally, it rewrites the value in the
@@ -364,7 +365,7 @@ class MainWindow(QMainWindow):
                 raise ValueError
         except ValueError:
             QApplication.restoreOverrideCursor()
-            utils.informationBox("Sorry, the WayBackMachine does not have " \
+            utils.informationBox("Sorry, the WayBackMachine does not have "
                                  "this page archived.", "Page not found")
             return
 
@@ -476,7 +477,7 @@ class MainWindow(QMainWindow):
         """
         Call tableModel.updateForSearch() to bring the contents of the
         bookmarks table into sync with the filter and tag selection.
-        
+
         We determine and pass the text in the filter box and a list of the tags
         selected, and we restore the selection to the currently selected
         bookmark after the view is refreshed if that bookmark is still in the
@@ -497,7 +498,7 @@ class MainWindow(QMainWindow):
         """
         Select the given /item/ if it still exists in the view, or the first
         item in the view if it doesn't or /item/ is None.
-        
+
         This method should to be called after updating the table view using a
         resetModel() command, as that causes the loss of the current selection.
 
@@ -535,6 +536,7 @@ class MainWindow(QMainWindow):
     def tagsSelect(self, what):
         if what in ('none', 'all'):
             for i in range(self.form.tagList.count()):
+                #TODO: Can't this just be `what != 'none'`?
                 self.form.tagList.item(i).setSelected(
                         False if what == 'none' else True)
 
@@ -575,7 +577,7 @@ class WayBackDialog(QDialog):
     def __init__(self, parent, snapshotData):
         """
         Set up the dialog as usual.
-        
+
         Arguments:
             parent - parent widget, as normal
             snapshotData - see the class docstring.
@@ -599,8 +601,9 @@ class WayBackDialog(QDialog):
 
     def reject(self):
         """
-        0 is a possible return value, meaning to use the first snapshot, so we
-        have to redefine reject()'s traditional return value of 0 as -1.
+        0 is a possible return value on accept, meaning to use the first
+        snapshot in the list, so we have to redefine reject()'s traditional
+        return value of 0 as -1.
         """
         QDialog.done(self, -1)
 
@@ -618,10 +621,11 @@ class WayBackDialog(QDialog):
 
         The single argument /action/ is one of the following strings:
             'start'   - initialize the algorithm, starting at latest snapshot
-            'later'   - say that the target snapshot is more recent than current
+            'later'   - say that the target snapshot is more recent than
+                        current
             'earlier' - say that the target snapshot is older than current
             'backup'  - pop control vars off the stack and go back one step in
-                the search algorithm
+                        the search algorithm
         Other values will raise an AssertionError.
 
         This method assumes that the action requested is valid with the current
@@ -646,6 +650,8 @@ class WayBackDialog(QDialog):
             self.lower = self.curnt + 1
             increaseBy = (self.upper - self.curnt + 1) / 2
             # always move by at least 1, to allow taking the final step
+            #TODO: With the addition of the +1 above, I'm not sure this 
+            #      conditional is required anymore
             self.curnt = self.curnt + (increaseBy if increaseBy > 0 else 1)
         elif action == 'earlier':
             self.upper = self.curnt - 1
@@ -715,7 +721,8 @@ class WayBackDialog(QDialog):
         elif self.form.cancelRadio.isChecked():
             self.reject()
         else:
-            assert False, "No radio button selected! This should be impossible."
+            assert False, "No radio button selected! This should be " \
+                          "impossible."
 
 
 def scan_tags(Session):
