@@ -99,17 +99,18 @@ class BookmarkTableModel(QAbstractTableModel):
                 return self.index(row, 0)
         return None
 
-    def makeNewBookmark(self, url="http://"):
+    def makeNewBookmark(self, url="http://", tags=None):
         """
         Create a new bookmark with boilerplate and the provided /url/ or
         'http://' if none. Return the object created.
         """
         new_name = ""
         new_url = url
-        new_tags = ""
+        if tags is None:
+            tags = []
+        new_tags = ', '.join(tags)
         new_descr = ""
         new_private = False
-        print "new_url is %s" % url
 
         g_bookmark = Bookmark(name=new_name, url=new_url,
                               description=new_descr, private=new_private)
@@ -400,7 +401,9 @@ class MainWindow(QMainWindow):
 
     def onAddBookmark(self, isChecked=False, urltext="http://"):
         # isChecked is not used
-        newMark = self.tableModel.makeNewBookmark(urltext)
+        tags = [unicode(i.text())
+                for i in self.form.tagList.selectedItems()]
+        newMark = self.tableModel.makeNewBookmark(urltext, tags)
         self.doUpdateForSearch()
         index = self.tableModel.indexFromPk(newMark.id)
         self.tableView.setCurrentIndex(index)
