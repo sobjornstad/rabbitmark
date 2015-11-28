@@ -2,6 +2,9 @@
 #TODO: Add a thingy to check if archive.org URL is *already* used, and if so to
 #      strip out the non-archive.org part and/or do a new snapshot search.
 #TODO: Adding new with tags selected and not (no tags) doesn't work as expected.
+#TODO: "Pinned" flag (put at top of display)
+#TODO: Add the currently selected tags to a new item if Ctrl-(Shift)-N pressed
+#      with some tags selected.
 
 import datetime
 import requests
@@ -774,17 +777,19 @@ class WayBackDialog(QDialog):
         self.form.urlBox.setText(url)
         self.form.urlBox.setCursorPosition(0)
 
-        # note: all values converted to 1-based indexing for user-friendliness
-        if self.curnt + 1 != len(self.sd):
-            state = self.state_label_template % (
-                    self.curnt + 1, self.lower+1, self.upper+1, len(self.sd))
+        # note: display converted to 1-based indexing for user-friendliness
+        if len(self.sd) > 1 and self.curnt+1 == 1:
+            state = "This is the oldest of %i snapshots.\n" \
+                    "What do you want to do?" % len(self.sd)
+        elif len(self.sd) > 1 and self.curnt+1 == len(self.sd):
+            state = "This is the most recent of %i snapshots.\n" \
+                    "What do you want to do?" % len(self.sd)
+        elif len(self.sd) == 1:
+            state = "This is the only available snapshot.\n" \
+                    "What do you want to do?"
         else:
-            if len(self.sd) > 1:
-                state = "This is the most recent of %i snapshots.\n" \
-                        "What do you want to do?" % len(self.sd)
-            else:
-                state = "This is the only available snapshot.\n" \
-                        "What do you want to do?"
+            state = self.state_label_template % (
+                    self.curnt+1, self.lower+1, self.upper+1, len(self.sd))
         self.form.stateLabel.setText(state)
         self.form.snapshotLabel.setText(self.snapshot_label_template % tstamp)
 
