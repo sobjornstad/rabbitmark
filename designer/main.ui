@@ -384,6 +384,8 @@
     <addaction name="actionNew_database"/>
     <addaction name="actionOpen_database"/>
     <addaction name="separator"/>
+    <addaction name="actionShowPrivate"/>
+    <addaction name="separator"/>
     <addaction name="actionImport_CSV"/>
     <addaction name="actionExport_CSV"/>
     <addaction name="separator"/>
@@ -493,6 +495,19 @@
   <action name="actionExport_CSV">
    <property name="text">
     <string>Export CSV...</string>
+   </property>
+  </action>
+  <action name="actionShowPrivate">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Private Items</string>
+   </property>
+  </action>
+  <action name="actionHide_Private_Items">
+   <property name="text">
+    <string>Hide Private Items</string>
    </property>
   </action>
  </widget>

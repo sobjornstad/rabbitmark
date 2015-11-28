@@ -2,7 +2,6 @@
 #TODO: Add a thingy to check if archive.org URL is *already* used, and if so to
 #      strip out the non-archive.org part and/or do a new snapshot search.
 #TODO: Adding new with tags selected and not (no tags) doesn't work as expected.
-#TODO: "invert selection" & "advanced search" buttons
 
 import datetime
 import requests
@@ -38,7 +37,7 @@ class BookmarkTableModel(QAbstractTableModel):
         self.session = self.Session()
         self.headerdata = ("Name", "Tags")
         self.L = None
-        self.updateForSearch("", [], TAG_SEARCH_MODES['OR'])
+        self.updateForSearch("", [], False, TAG_SEARCH_MODES['OR'])
 
     ### Standard reimplemented methods ###
     def rowCount(self, parent):
@@ -98,10 +97,11 @@ class BookmarkTableModel(QAbstractTableModel):
         new_url = url
         new_tags = ""
         new_descr = ""
+        new_private = False
         print "new_url is %s" % url
 
         g_bookmark = Bookmark(name=new_name, url=new_url,
-                              description=new_descr)
+                              description=new_descr, private=new_private)
         self.session.add(g_bookmark)
 
         tag_list = [tag.strip() for tag in new_tags.split(',')]
@@ -116,7 +116,7 @@ class BookmarkTableModel(QAbstractTableModel):
         self.session.flush() # we'll presumably commit as soon as we edit it
         return g_bookmark
 
-    def updateForSearch(self, searchText, tags, searchMode):
+    def updateForSearch(self, searchText, tags, showPrivates, searchMode):
         nameText = "%" + searchText + "%"
         self.beginResetModel()
         self.L = []
@@ -131,6 +131,8 @@ class BookmarkTableModel(QAbstractTableModel):
                 or_(*[Tag.text.like(t) for t in tags]))
         allowed_tags = [i.text for i in tag_objs]
 
+        # TODO: This query uses some unnecessary duplication -- multiple
+        # filter()s can be used for the OR query mode too.
         if searchMode == TAG_SEARCH_MODES['OR']:
             tag_query = []
             if NOTAGS in tags:
@@ -165,6 +167,8 @@ class BookmarkTableModel(QAbstractTableModel):
             assert False, "in updateForSearch(): Search mode %r " \
                           "unimplemented" % searchMode
 
+        if not showPrivates:
+            query = query.filter(Bookmark.private == False)
         for mark in query:
             self.L.append(mark)
         self.sort(0)
@@ -320,6 +324,8 @@ class MainWindow(QMainWindow):
         sf.actionRenameTag.triggered.connect(self.onRenameTag)
         sf.actionDeleteTag.triggered.connect(self.onDeleteTag)
         sf.actionWayBack.triggered.connect(self.onWayBackMachine)
+        sf.actionShowPrivate.triggered.connect(self.onTogglePrivate)
+        self.showPrivates = False
 
         sf.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         sf.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
@@ -367,6 +373,10 @@ class MainWindow(QMainWindow):
         self.maybeSaveBookmark(old=self.form.nameBox, new=self.form.nameBox)
         self.tableModel.commit()
         sys.exit(0)
+
+    def onTogglePrivate(self):
+        self.showPrivates = not self.showPrivates
+        self.doUpdateForSearch()
 
     def onAddBookmarkFromClipboard(self):
         pastedUrl = unicode(QApplication.clipboard().text()).strip()
@@ -545,6 +555,7 @@ class MainWindow(QMainWindow):
                 return # nothing is selected
             if self.tableModel.saveIfEdited(mark, self.mRepr()):
                 self.resetTagList()
+        self.doUpdateForSearch()
 
     def doUpdateForSearch(self):
         """
@@ -566,6 +577,7 @@ class MainWindow(QMainWindow):
         self.tableModel.updateForSearch(
                 unicode(self.form.searchBox.text()),
                 selectedTags,
+                self.showPrivates,
                 searchMode)
         self.reselectItem(oldId)
 
