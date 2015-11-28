@@ -301,6 +301,7 @@ class MainWindow(QMainWindow):
 
         sf.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         sf.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
+        sf.tagsInvertButton.clicked.connect(lambda: self.tagsSelect('invert'))
         #self.form.tagsSaveButton.
         #self.form.tagsLoadButton.
         sf.copyUrlButton.clicked.connect(self.copyUrl)
@@ -577,11 +578,21 @@ class MainWindow(QMainWindow):
                 i.setCursorPosition(0)
 
     def tagsSelect(self, what):
-        if what in ('none', 'all'):
-            for i in range(self.form.tagList.count()):
-                #TODO: Can't this just be `what != 'none'`?
-                self.form.tagList.item(i).setSelected(
-                        False if what == 'none' else True)
+        # Block signals so that we only have to call itemSelectionChanged
+        # once instead of numTags times -- this *greatly* improves performance.
+        oldSigs = self.form.tagList.blockSignals(True)
+        for i in range(self.form.tagList.count()):
+            if what == 'none':
+                self.form.tagList.item(i).setSelected(False)
+            elif what == 'all':
+                self.form.tagList.item(i).setSelected(True)
+            elif what == 'invert':
+                currentStatus = self.form.tagList.item(i).isSelected()
+                self.form.tagList.item(i).setSelected(not currentStatus)
+            else:
+                assert False, "Invalid argument to tagsSelect!"
+        self.form.tagList.blockSignals(oldSigs)
+        self.form.tagList.itemSelectionChanged.emit()
 
     def mRepr(self):
         """
