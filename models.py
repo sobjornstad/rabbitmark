@@ -1,7 +1,7 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import Table, Integer, String, Column, ForeignKey, \
-        PrimaryKeyConstraint
+from sqlalchemy import Integer, String, Boolean, \
+        Table, Column, ForeignKey, PrimaryKeyConstraint
 
 Base = declarative_base()
 
@@ -19,6 +19,7 @@ class Bookmark(Base):
     description = Column(String)
     tags_rel = relationship("Tag", secondary=mark_tag_assoc,
                             backref="bookmarks")
+    private = Column(Boolean)
 
     def __repr__(self):
         return "<Bookmark named %s>" % self.name

@@ -132,7 +132,6 @@ class BookmarkTableModel(QAbstractTableModel):
         allowed_tags = [i.text for i in tag_objs]
 
         if searchMode == TAG_SEARCH_MODES['OR']:
-            print "OR SEARCH"
             tag_query = []
             if NOTAGS in tags:
                 tags.remove(NOTAGS)
@@ -261,10 +260,12 @@ class BookmarkTableModel(QAbstractTableModel):
         if not (mark.name == content['name'] and
                 mark.description == content['descr'] and
                 mark.url == content['url'] and
+                mark.private == content['priv'] and
                 [i.text for i in mark.tags_rel] == content['tags']):
             mark.name = content['name']
             mark.description = content['descr']
             mark.url = content['url']
+            mark.private = content['priv']
 
             # add new tags
             new_tags = content['tags']
@@ -536,7 +537,8 @@ class MainWindow(QMainWindow):
         changes, as well as before quitting.
         """
         sf = self.form
-        if old in (sf.nameBox, sf.urlBox, sf.descriptionBox, sf.tagsBox):
+        if old in (sf.nameBox, sf.urlBox, sf.descriptionBox, sf.tagsBox,
+                   sf.privateCheck):
             mark = self.tableModel.getObj(self.tableView.currentIndex())
             QApplication.processEvents()
             if mark is None:
@@ -599,6 +601,7 @@ class MainWindow(QMainWindow):
             self.form.nameBox.setText(mark.name)
             self.form.urlBox.setText(mark.url)
             self.form.descriptionBox.setText(mark.description)
+            self.form.privateCheck.setChecked(mark.private)
             tags = ', '.join([i.text for i in mark.tags_rel])
             self.form.tagsBox.setText(tags)
             # If a name or URL is too long to fit in the box, this will make
@@ -632,6 +635,7 @@ class MainWindow(QMainWindow):
                 'name':  unicode(self.form.nameBox.text()),
                 'url':   unicode(self.form.urlBox.text()),
                 'descr': unicode(self.form.descriptionBox.toPlainText()),
+                'priv':  self.form.privateCheck.isChecked(),
                 'tags':  [i.strip() for i in
                           unicode(self.form.tagsBox.text()).split(',')
                           if i.strip() != ''],
