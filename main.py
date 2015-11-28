@@ -1,6 +1,8 @@
 #TODO: Don't allow rich text in description box.
 #TODO: Add a thingy to check if archive.org URL is *already* used, and if so to
 #      strip out the non-archive.org part and/or do a new snapshot search.
+#TODO: Adding new with tags selected and not (no tags) doesn't work as expected.
+#TODO: "invert selection" & "advanced search" buttons
 
 import datetime
 import requests
@@ -166,12 +168,16 @@ class BookmarkTableModel(QAbstractTableModel):
         except IndexError:
             # there are no other items
             nextObj = None
+        tags = mark.tags_rel
         self.session.delete(mark)
+        for tag in tags:
+            self.maybeExpungeTag(tag)
         self.commit()
-        self.beginResetModel()
+
         #TODO: When using beginRemoveRows(), a blank row is left in the table.
         # This is a little inconvenient, but it *works* for now.
         #self.beginRemoveRows(index, row, row)
+        self.beginResetModel()
         del self.L[row]
         self.endResetModel()
         #self.endRemoveRows()
@@ -205,6 +211,25 @@ class BookmarkTableModel(QAbstractTableModel):
         self.session.delete(tag_obj)
         self.commit()
 
+    def maybeExpungeTag(self, tag):
+        """
+        Delete /tag/ from the tags table if it is no longer referenced by
+        any bookmarks.
+
+        Return:
+            True if the tag was deleted.
+            False if the tag is still referenced and was not deleted.
+
+        WARNING: This method does not call commit() for performance reasons,
+        but deletes will not be seen by other operations until a commit is
+        finished. Do not forget to commit after using this method.
+        """
+        if not len(tag.bookmarks):
+            self.session.delete(tag)
+            return True
+        else:
+            return False
+
     def saveIfEdited(self, mark, content):
         """
         If the content in 'content' differs from the data in the db obj
@@ -234,7 +259,8 @@ class BookmarkTableModel(QAbstractTableModel):
             # remove tags that are no longer used
             for tag in mark.tags_rel:
                 if tag.text not in new_tags:
-                    self.session.delete(tag)
+                    mark.tags_rel.remove(tag)
+                    self.maybeExpungeTag(tag)
             self.commit()
             return True
         return False
@@ -749,7 +775,7 @@ def scan_tags(Session):
     return tag_list
 
 def make_Session():
-    engine = create_engine('sqlite:///test.db')
+    engine = create_engine('sqlite:///sorenmarks.db')
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine) # will not recreate existing tables/dbs
     return Session

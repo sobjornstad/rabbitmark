@@ -17,8 +17,8 @@ class Bookmark(Base):
     name = Column(String)
     url = Column(String)
     description = Column(String)
-    tags_rel = relationship("Tag", secondary=mark_tag_assoc, backref="bookmarks",
-            cascade="all, delete")
+    tags_rel = relationship("Tag", secondary=mark_tag_assoc,
+                            backref="bookmarks")
 
     def __repr__(self):
         return "<Bookmark named %s>" % self.name
