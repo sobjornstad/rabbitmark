@@ -22,6 +22,7 @@ from models import Bookmark, Tag, Base
 import utils
 
 NOTAGS = "(no tags)"
+TAG_SEARCH_MODES = {'AND': 1, 'OR': 0}
 
 class BookmarkTableModel(QAbstractTableModel):
     """
@@ -37,7 +38,7 @@ class BookmarkTableModel(QAbstractTableModel):
         self.session = self.Session()
         self.headerdata = ("Name", "Tags")
         self.L = None
-        self.updateForSearch("", [])
+        self.updateForSearch("", [], TAG_SEARCH_MODES['OR'])
 
     ### Standard reimplemented methods ###
     def rowCount(self, parent):
@@ -115,35 +116,55 @@ class BookmarkTableModel(QAbstractTableModel):
         self.session.flush() # we'll presumably commit as soon as we edit it
         return g_bookmark
 
-    def updateForSearch(self, searchText, tags):
+    def updateForSearch(self, searchText, tags, searchMode):
         nameText = "%" + searchText + "%"
         self.beginResetModel()
         self.L = []
 
-        # sqlalchemy doesn't support in_ queries on many-to-many relationships,
+        # SQLAlchemy doesn't support in_ queries on many-to-many relationships,
         # so it's necessary to get the text of the tags and compare those.
+        # NOTE: without my even having to do anything, this behaves the way I
+        # want it to for OR when nothing is selected (equivalent to everything).
+        # For AND, we explicitly check whether /tags/ is empty and don't do a
+        # filter if it is.
         tag_objs = self.session.query(Tag).filter(
                 or_(*[Tag.text.like(t) for t in tags]))
         allowed_tags = [i.text for i in tag_objs]
 
-        # NOTE: without my even having to do anything, this behaves the way I
-        # want it to when nothing is selected (equivalent to everything).
-        tag_query = []
-        if NOTAGS in tags:
-            tags.remove(NOTAGS)
-            tag_query = [Bookmark.tags_rel == None]
-        if len(tags) > 0:
-            tag_query += [Bookmark.tags_rel.any(Tag.text.in_(allowed_tags))]
+        if searchMode == TAG_SEARCH_MODES['OR']:
+            print "OR SEARCH"
+            tag_query = []
+            if NOTAGS in tags:
+                tags.remove(NOTAGS)
+                tag_query = [Bookmark.tags_rel == None]
+            if len(tags) > 0:
+                tag_query += [Bookmark.tags_rel.any(Tag.text.in_(allowed_tags))]
+            query = self.session.query(Bookmark).filter(
+                    and_(
+                        or_(
+                            Bookmark.name.like(nameText),
+                            Bookmark.url.like(nameText),
+                            Bookmark.description.like(nameText)
+                           ),
+                        or_(*tag_query)
+                    ))
 
-        query = self.session.query(Bookmark).filter(
-                and_(
+        elif searchMode == TAG_SEARCH_MODES['AND']:
+            query = self.session.query(Bookmark).filter(
                     or_(
                         Bookmark.name.like(nameText),
                         Bookmark.url.like(nameText),
                         Bookmark.description.like(nameText)
-                       ),
-                    or_(*tag_query)
-                ))
+                       ))
+            if NOTAGS in tags:
+                query = query.filter(Bookmark.tags_rel == None)
+            if len(tags): # don't filter at all if no tags selected
+                for tag in allowed_tags:
+                    query = query.filter(Bookmark.tags_rel.any(Tag.text == tag))
+
+        else:
+            assert False, "in updateForSearch(): Search mode %r " \
+                          "unimplemented" % searchMode
 
         for mark in query:
             self.L.append(mark)
@@ -310,6 +331,12 @@ class MainWindow(QMainWindow):
         findShortcut = QShortcut(QKeySequence("Ctrl+F"), sf.searchBox)
         findShortcut.connect(findShortcut, SIGNAL("activated()"),
                              sf.searchBox.setFocus)
+
+        # Set up tag mode dropdown.
+        # Indexes of these options should match with TAG_SEARCH_MODES.
+        sf.tagsModeDropdown.addItem("Require at least one selected tag (OR)")
+        sf.tagsModeDropdown.addItem("Require all selected tags (AND)")
+        sf.tagsModeDropdown.activated.connect(self.doUpdateForSearch)
 
         # set up data table
         self.tableView = self.form.bookmarkTable
@@ -533,9 +560,11 @@ class MainWindow(QMainWindow):
                         for i in self.form.tagList.selectedItems()]
         mark = self.tableModel.getObj(self.tableView.currentIndex())
         oldId = None if mark is None else mark.id
+        searchMode = self.form.tagsModeDropdown.currentIndex()
         self.tableModel.updateForSearch(
                 unicode(self.form.searchBox.text()),
-                selectedTags)
+                selectedTags,
+                searchMode)
         self.reselectItem(oldId)
 
     def reselectItem(self, item=None):
