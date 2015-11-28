@@ -25,6 +25,7 @@ import utils
 
 NOTAGS = "(no tags)"
 TAG_SEARCH_MODES = {'AND': 1, 'OR': 0}
+DATE_FORMAT = '%Y-%m-%d'
 
 class BookmarkTableModel(QAbstractTableModel):
     """
@@ -33,6 +34,7 @@ class BookmarkTableModel(QAbstractTableModel):
     code should be moved into a TagManager or a set of functions of that
     description soon.
     """
+    columns = {'Name': 0, 'Tags': 1}
     def __init__(self, parent, Session, *args):
         QAbstractTableModel.__init__(self)
         self.parent = parent
@@ -65,19 +67,25 @@ class BookmarkTableModel(QAbstractTableModel):
 
         col = index.column()
         mark = self.L[index.row()]
-        if col == 0:
+        if col == self.columns['Name']:
             return mark.name
-        else:
+        elif col == self.columns['Tags']:
             return ', '.join(i.text for i in mark.tags_rel)
+        else:
+            assert False, "Invalid column %r requested from model's "
+                          "data()" % col
 
-    def sort(self, column, order=Qt.AscendingOrder):
+    def sort(self, col, order=Qt.AscendingOrder):
         rev = (order != Qt.AscendingOrder)
 
-        if column == 0:
+        if col == self.columns['Name']:
             key = lambda i: i.name
-        elif column == 1:
+        elif col == self.columns['Tags']:
             print "DEBUG: Sorting by this column is not supported."
             key = lambda i: None
+        else:
+            assert False, "Invalid column %r requested from model's "
+                          "sort()" % col
 
         self.beginResetModel()
         self.L.sort(key=key, reverse=rev)
@@ -450,7 +458,7 @@ class MainWindow(QMainWindow):
         for i in snapshots[1:]: # first row is headers
             timestamp, pagePath = i[1], i[2]
             formattedTimestamp = datetime.datetime.strptime(
-                    timestamp, '%Y%m%d%H%M%S').strftime('%Y-%m-%d')
+                    timestamp, '%Y%m%d%H%M%S').strftime(DATE_FORMAT)
             archivedUrl = "http://web.archive.org/web/%s/%s" % (
                     timestamp, pagePath)
             archived.append((formattedTimestamp, timestamp, archivedUrl))
