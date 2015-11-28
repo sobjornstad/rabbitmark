@@ -72,7 +72,7 @@ class BookmarkTableModel(QAbstractTableModel):
         elif col == self.columns['Tags']:
             return ', '.join(i.text for i in mark.tags_rel)
         else:
-            assert False, "Invalid column %r requested from model's "
+            assert False, "Invalid column %r requested from model's " \
                           "data()" % col
 
     def sort(self, col, order=Qt.AscendingOrder):
@@ -84,7 +84,7 @@ class BookmarkTableModel(QAbstractTableModel):
             print "DEBUG: Sorting by this column is not supported."
             key = lambda i: None
         else:
-            assert False, "Invalid column %r requested from model's "
+            assert False, "Invalid column %r requested from model's " \
                           "sort()" % col
 
         self.beginResetModel()
