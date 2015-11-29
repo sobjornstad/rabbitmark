@@ -569,7 +569,7 @@ class MainWindow(QMainWindow):
                 return # nothing is selected
             if self.tableModel.saveIfEdited(mark, self.mRepr()):
                 self.resetTagList()
-        self.doUpdateForSearch()
+            self.doUpdateForSearch()
 
     def doUpdateForSearch(self):
         """
