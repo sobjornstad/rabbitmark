@@ -600,6 +600,7 @@ class MainWindow(QMainWindow):
                 self.showPrivates,
                 searchMode)
         self.reselectItem(oldId)
+        self.updateTitleCount(self.tableModel.rowCount(self))
 
     def reselectItem(self, item=None):
         """
@@ -672,6 +673,14 @@ class MainWindow(QMainWindow):
                           unicode(self.form.tagsBox.text()).split(',')
                           if i.strip() != ''],
                }
+
+    def updateTitleCount(self, count):
+        """
+        Change the count of matching items that appears in the title bar to
+        /count/.
+        """
+        self.setWindowTitle("RabbitMark - %i match%s" % (
+                count, '' if count == 1 else 'es'))
 
 
 class WayBackDialog(QDialog):
