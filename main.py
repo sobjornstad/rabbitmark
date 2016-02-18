@@ -1,10 +1,16 @@
+# RabbitMark-devel
+# Copyright (c) 2015 Soren Bjornstad.
+# All rights reserved (temporary; if you read this and want such, contact me
+# for relicensing under some FOSS license).
+
 #TODO: Don't allow rich text in description box.
 #TODO: Add a thingy to check if archive.org URL is *already* used, and if so to
 #      strip out the non-archive.org part and/or do a new snapshot search.
 #TODO: Adding new with tags selected and not (no tags) doesn't work as expected.
 #TODO: "Pinned" flag (put at top of display)
-#TODO: Add the currently selected tags to a new item if Ctrl-(Shift)-N pressed
-#      with some tags selected.
+#TODO: Clear the search box upon adding an item so that the new item shows up.
+#TODO: Add an option to select the tags that the current bookmark has?
+#TODO: Add some sort of inter-item linkage function.
 
 import datetime
 import requests
@@ -257,7 +263,7 @@ class BookmarkTableModel(QAbstractTableModel):
             False if the tag is still referenced and was not deleted.
 
         WARNING: This method does not call commit() for performance reasons,
-        but deletes will not be seen by other operations until a commit is
+        but deletes will not be seen by other operations until a transaction is
         finished. Do not forget to commit after using this method.
         """
         if not len(tag.bookmarks):
