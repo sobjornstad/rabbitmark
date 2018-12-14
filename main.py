@@ -1,9 +1,10 @@
 # RabbitMark-devel
-# Copyright (c) 2015 Soren Bjornstad.
+# Copyright (c) 2015, 2018 Soren Bjornstad.
 # All rights reserved (temporary; if you read this and want such, contact me
 # for relicensing under some FOSS license).
 
-#TODO: Don't allow rich text in description box.
+#TODO: "Hapax legomena last" option in Tags menu
+#TODO: Don't jump the cursor around when focus is lost.
 #TODO: Add a thingy to check if archive.org URL is *already* used, and if so to
 #      strip out the non-archive.org part and/or do a new snapshot search.
 #TODO: Adding new with tags selected and not (no tags) doesn't work as expected.
@@ -633,7 +634,7 @@ class MainWindow(QMainWindow):
             self.form.splitter.widget(1).setVisible(True)
             self.form.nameBox.setText(mark.name)
             self.form.urlBox.setText(mark.url)
-            self.form.descriptionBox.setText(mark.description)
+            self.form.descriptionBox.setPlainText(mark.description)
             self.form.privateCheck.setChecked(mark.private)
             tags = ', '.join([i.text for i in mark.tags_rel])
             self.form.tagsBox.setText(tags)

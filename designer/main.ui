@@ -291,16 +291,6 @@
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
-             <widget class="QTextEdit" name="descriptionBox">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                <horstretch>4</horstretch>
-                <verstretch>1</verstretch>
-               </sizepolicy>
-              </property>
-             </widget>
-            </item>
             <item row="4" column="1">
              <widget class="QCheckBox" name="privateCheck">
               <property name="text">
@@ -315,6 +305,19 @@
               </property>
               <property name="buddy">
                <cstring>privateCheck</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QPlainTextEdit" name="descriptionBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>4</horstretch>
+                <verstretch>1</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="tabChangesFocus">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
