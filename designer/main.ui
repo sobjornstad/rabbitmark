@@ -131,25 +131,6 @@
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QPushButton" name="addButton">
-            <property name="minimumSize">
-             <size>
-              <width>30</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>30</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>+</string>
-            </property>
-           </widget>
-          </item>
          </layout>
         </item>
         <item>
@@ -163,6 +144,9 @@
              <horstretch>4</horstretch>
              <verstretch>3</verstretch>
             </sizepolicy>
+           </property>
+           <property name="tabKeyNavigation">
+            <bool>false</bool>
            </property>
            <property name="selectionMode">
             <enum>QAbstractItemView::SingleSelection</enum>
@@ -509,15 +493,20 @@
   </action>
  </widget>
  <tabstops>
+  <tabstop>tagList</tabstop>
+  <tabstop>tagsNoneButton</tabstop>
+  <tabstop>tagsAllButton</tabstop>
+  <tabstop>tagsInvertButton</tabstop>
+  <tabstop>tagsModeDropdown</tabstop>
   <tabstop>searchBox</tabstop>
   <tabstop>bookmarkTable</tabstop>
   <tabstop>nameBox</tabstop>
   <tabstop>urlBox</tabstop>
   <tabstop>tagsBox</tabstop>
   <tabstop>descriptionBox</tabstop>
+  <tabstop>privateCheck</tabstop>
   <tabstop>copyUrlButton</tabstop>
   <tabstop>browseUrlButton</tabstop>
-  <tabstop>tagList</tabstop>
  </tabstops>
  <resources/>
  <connections/>

@@ -353,7 +353,6 @@ class MainWindow(QMainWindow):
         #self.form.tagsLoadButton.
         sf.copyUrlButton.clicked.connect(self.copyUrl)
         sf.browseUrlButton.clicked.connect(self.openUrl)
-        sf.addButton.clicked.connect(self.onAddBookmark)
         findShortcut = QShortcut(QKeySequence("Ctrl+F"), sf.searchBox)
         findShortcut.connect(findShortcut, SIGNAL("activated()"),
                              sf.searchBox.setFocus)
