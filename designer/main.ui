@@ -14,25 +14,25 @@
    <string>RabbitMark</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_3">
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
     <item>
      <widget class="QSplitter" name="splitter_2">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
       <widget class="QWidget" name="layoutWidget">
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
         <item>
          <widget class="QListWidget" name="tagList">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
-            <horstretch>1</horstretch>
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
           <property name="minimumSize">
            <size>
-            <width>200</width>
+            <width>0</width>
             <height>0</height>
            </size>
           </property>
@@ -56,10 +56,23 @@
         <item>
          <layout class="QGridLayout" name="gridLayout_2">
           <item row="1" column="0" colspan="4">
-           <widget class="QComboBox" name="tagsModeDropdown"/>
+           <widget class="QComboBox" name="tagsModeDropdown">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
           </item>
           <item row="0" column="3">
            <widget class="QPushButton" name="tagsInvertButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="minimumSize">
              <size>
               <width>50</width>
@@ -68,7 +81,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>100</width>
+              <width>16777215</width>
               <height>16777215</height>
              </size>
             </property>
@@ -92,6 +105,12 @@
           </item>
           <item row="0" column="2">
            <widget class="QPushButton" name="tagsAllButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="minimumSize">
              <size>
               <width>50</width>
@@ -105,6 +124,12 @@
           </item>
           <item row="0" column="1">
            <widget class="QPushButton" name="tagsNoneButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="minimumSize">
              <size>
               <width>50</width>
@@ -126,6 +151,12 @@
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
            <widget class="QLineEdit" name="searchBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="placeholderText">
              <string>Filter...</string>
             </property>
@@ -135,13 +166,19 @@
         </item>
         <item>
          <widget class="QSplitter" name="splitter">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
           <widget class="QTableView" name="bookmarkTable">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>4</horstretch>
+             <horstretch>0</horstretch>
              <verstretch>3</verstretch>
             </sizepolicy>
            </property>
@@ -186,7 +223,7 @@
              <widget class="QLineEdit" name="nameBox">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                <horstretch>4</horstretch>
+                <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
@@ -208,7 +245,7 @@
                <widget class="QLineEdit" name="urlBox">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>4</horstretch>
+                  <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
@@ -256,7 +293,7 @@
              <widget class="QLineEdit" name="tagsBox">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                <horstretch>4</horstretch>
+                <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
@@ -296,7 +333,7 @@
              <widget class="QPlainTextEdit" name="descriptionBox">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                <horstretch>4</horstretch>
+                <horstretch>0</horstretch>
                 <verstretch>1</verstretch>
                </sizepolicy>
               </property>
