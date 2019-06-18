@@ -812,14 +812,11 @@ class WayBackDialog(QDialog):
         elif action == 'later':
             self.lower = self.curnt + 1
             increaseBy = (self.upper - self.curnt + 1) // 2
-            # always move by at least 1, to allow taking the final step
-            #TODO: With the addition of the +1 above, I'm not sure this
-            #      conditional is required anymore
-            self.curnt = self.curnt + (increaseBy if increaseBy > 0 else 1)
+            self.curnt = self.curnt + increaseBy
         elif action == 'earlier':
             self.upper = self.curnt - 1
             decreaseBy = (self.curnt - self.lower + 1) // 2
-            self.curnt = self.curnt - (decreaseBy if decreaseBy > 0 else 1)
+            self.curnt = self.curnt - decreaseBy
         elif action == 'backup':
             self.lower, self.upper, self.curnt = self.stack.pop()
         else:
