@@ -1,0 +1,9 @@
+* "Hapax legomena last" option in Tags menu
+* Don't jump the cursor around when focus is lost.
+* Add a thingy to check if archive.org URL is *already* used, and if so to
+* strip out the non-archive.org part and/or do a new snapshot search.
+* Adding new with tags selected and not (no tags) doesn't work as expected
+* "Pinned" flag (put at top of display)
+* Clear the search box upon adding an item so that the new item shows up.
+* Add an option to select the tags that the current bookmark has?
+* Add some sort of inter-item linkage function.

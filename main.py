@@ -7,16 +7,6 @@ main.py -- RabbitMark Qt application
 # All rights reserved (temporary; if you read this and want such, contact me
 # for relicensing under some FOSS license).
 
-#TODO: "Hapax legomena last" option in Tags menu
-#TODO: Don't jump the cursor around when focus is lost.
-#TODO: Add a thingy to check if archive.org URL is *already* used, and if so to
-#      strip out the non-archive.org part and/or do a new snapshot search.
-#TODO: Adding new with tags selected and not (no tags) doesn't work as expected
-#TODO: "Pinned" flag (put at top of display)
-#TODO: Clear the search box upon adding an item so that the new item shows up.
-#TODO: Add an option to select the tags that the current bookmark has?
-#TODO: Add some sort of inter-item linkage function.
-
 import datetime
 from enum import Enum, unique
 import sys
