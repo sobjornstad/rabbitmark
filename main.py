@@ -1,5 +1,9 @@
-# RabbitMark-devel
-# Copyright (c) 2015, 2018 Soren Bjornstad.
+"""
+main.py -- RabbitMark Qt application
+"""
+
+# RabbitMark
+# Copyright (c) 2015, 2018, 2019 Soren Bjornstad.
 # All rights reserved (temporary; if you read this and want such, contact me
 # for relicensing under some FOSS license).
 
@@ -7,20 +11,22 @@
 #TODO: Don't jump the cursor around when focus is lost.
 #TODO: Add a thingy to check if archive.org URL is *already* used, and if so to
 #      strip out the non-archive.org part and/or do a new snapshot search.
-#TODO: Adding new with tags selected and not (no tags) doesn't work as expected.
+#TODO: Adding new with tags selected and not (no tags) doesn't work as expected
 #TODO: "Pinned" flag (put at top of display)
 #TODO: Clear the search box upon adding an item so that the new item shows up.
 #TODO: Add an option to select the tags that the current bookmark has?
 #TODO: Add some sort of inter-item linkage function.
 
 import datetime
+from enum import Enum, unique
 import sys
 
 import requests
+# pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication, QMainWindow, \
         QShortcut, QMessageBox, QDialog
 from PyQt5.QtGui import QDesktopServices, QKeySequence, QCursor
-from PyQt5.QtCore import Qt, QAbstractTableModel, QUrl, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, QAbstractTableModel, QUrl, pyqtSignal
 from sqlalchemy import create_engine, event, and_, or_
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
@@ -43,9 +49,45 @@ class BookmarkTableModel(QAbstractTableModel):
     """
     dataChanged = pyqtSignal()
 
+    @unique
+    class ModelColumn(Enum):
+        """
+        Heavy Enum representing the columns in this model. The goal is to
+        factor the complexity out of the overridden model methods.
+        """
+        Name = 0
+        Tags = 1
 
-    columns = {'Name': 0, 'Tags': 1}
-    def __init__(self, parent, Session, *args):
+        def __str__(self):
+            return self.name
+
+        def data(self, bookmark):
+            """
+            Given a Bookmark object,
+            return the data from it that this column should contain.
+            """
+            if self.name == 'Name':
+                return bookmark.name
+            elif self.name == 'Tags':
+                return ', '.join(i.text for i in bookmark.tags_rel)
+            raise AssertionError("Model column %i not defined in data()"
+                                 % self.value)
+
+        #pylint: disable=superfluous-parens
+        def sort_function(self):
+            "Return a key function that will sort this column correctly."
+            if self.name == 'Name':
+                return (lambda i: i.name)
+            elif self.name == 'Tags':
+                print("DEBUG: Sorting by this column is not supported.")
+                return (lambda i: None)
+            else:
+                raise AssertionError(
+                    "Model column %i not defined in sort_function()"
+                    % self.value)
+
+
+    def __init__(self, parent, Session):
         QAbstractTableModel.__init__(self)
         self.parent = parent
         self.Session = Session
@@ -55,55 +97,43 @@ class BookmarkTableModel(QAbstractTableModel):
         self.updateForSearch("", [], False, TAG_SEARCH_MODES['OR'])
 
     ### Standard reimplemented methods ###
-    def rowCount(self, parent):
+    def rowCount(self, parent): #pylint: disable=no-self-use,unused-argument
         return len(self.L)
-    def columnCount(self, parent):
+    def columnCount(self, parent): #pylint: disable=no-self-use,unused-argument
         return len(self.headerdata)
 
-    def flags(self, index):
+    def flags(self, index): #pylint: disable=no-self-use,unused-argument
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
     def headerData(self, col, orientation, role):
+        "Return headers for the model table."
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headerdata[col]
         else:
             return None
 
     def data(self, index, role):
+        "Return data for a given row and column."
         if not index.isValid():
             return None
         if not (role == Qt.DisplayRole or role == Qt.EditRole):
             return None
 
-        col = index.column()
+        col = self.ModelColumn(index.column())
         mark = self.L[index.row()]
-        if col == self.columns['Name']:
-            return mark.name
-        elif col == self.columns['Tags']:
-            return ', '.join(i.text for i in mark.tags_rel)
-        else:
-            assert False, "Invalid column %r requested from model's " \
-                          "data()" % col
+        return col.data(mark)
 
     def sort(self, col, order=Qt.AscendingOrder):
+        "Re-sort the model data by the given column and ordering."
         rev = (order != Qt.AscendingOrder)
-
-        if col == self.columns['Name']:
-            key = lambda i: i.name
-        elif col == self.columns['Tags']:
-            print("DEBUG: Sorting by this column is not supported.")
-            key = lambda i: None
-        else:
-            assert False, "Invalid column %r requested from model's " \
-                          "sort()" % col
-
         self.beginResetModel()
-        self.L.sort(key=key, reverse=rev)
+        self.L.sort(key=self.ModelColumn(col).sort_function(), reverse=rev)
         self.endResetModel()
 
 
     ### Custom methods ###
     def indexFromPk(self, pk):
+        "Return the model index of a given primary key."
         for row, obj in enumerate(self.L):
             if obj.id == pk:
                 return self.index(row, 0)
@@ -129,7 +159,7 @@ class BookmarkTableModel(QAbstractTableModel):
         tag_list = [tag.strip() for tag in new_tags.split(',')]
         for tag in tag_list:
             existingTag = self.session.query(Tag).filter(
-                    Tag.text == tag).first()
+                Tag.text == tag).first()
             if existingTag:
                 g_bookmark.tags_rel.append(existingTag)
             else:
@@ -146,11 +176,11 @@ class BookmarkTableModel(QAbstractTableModel):
         # SQLAlchemy doesn't support in_ queries on many-to-many relationships,
         # so it's necessary to get the text of the tags and compare those.
         # NOTE: without my even having to do anything, this behaves the way I
-        # want it to for OR when nothing is selected (equivalent to everything).
-        # For AND, we explicitly check whether /tags/ is empty and don't do a
-        # filter if it is.
+        # want it to for OR when nothing is selected (equivalent to
+        # everything). For AND, we explicitly check whether /tags/ is empty and
+        # don't do a filter if it is.
         tag_objs = self.session.query(Tag).filter(
-                or_(*[Tag.text.like(t) for t in tags]))
+            or_(*[Tag.text.like(t) for t in tags]))
         allowed_tags = [i.text for i in tag_objs]
 
         # TODO: This query uses some unnecessary duplication -- multiple
@@ -159,31 +189,33 @@ class BookmarkTableModel(QAbstractTableModel):
             tag_query = []
             if NOTAGS in tags:
                 tags.remove(NOTAGS)
-                tag_query = [Bookmark.tags_rel == None]
-            if len(tags) > 0:
-                tag_query += [Bookmark.tags_rel.any(Tag.text.in_(allowed_tags))]
+                tag_query = [Bookmark.tags_rel is None]
+            if tags:
+                tag_query += [
+                    Bookmark.tags_rel.any(Tag.text.in_(allowed_tags))]
             query = self.session.query(Bookmark).filter(
-                    and_(
-                        or_(
-                            Bookmark.name.like(nameText),
-                            Bookmark.url.like(nameText),
-                            Bookmark.description.like(nameText)
-                           ),
-                        or_(*tag_query)
-                    ))
-
-        elif searchMode == TAG_SEARCH_MODES['AND']:
-            query = self.session.query(Bookmark).filter(
+                and_(
                     or_(
                         Bookmark.name.like(nameText),
                         Bookmark.url.like(nameText),
                         Bookmark.description.like(nameText)
-                       ))
+                    ),
+                    or_(*tag_query)
+                ))
+
+        elif searchMode == TAG_SEARCH_MODES['AND']:
+            query = self.session.query(Bookmark).filter(
+                or_(
+                    Bookmark.name.like(nameText),
+                    Bookmark.url.like(nameText),
+                    Bookmark.description.like(nameText)
+                ))
             if NOTAGS in tags:
-                query = query.filter(Bookmark.tags_rel == None)
-            if len(tags): # don't filter at all if no tags selected
+                query = query.filter(Bookmark.tags_rel is None)
+            if tags: # don't filter at all if no tags selected
                 for tag in allowed_tags:
-                    query = query.filter(Bookmark.tags_rel.any(Tag.text == tag))
+                    query = query.filter(
+                        Bookmark.tags_rel.any(Tag.text == tag))
 
         else:
             assert False, "in updateForSearch(): Search mode %r " \
@@ -240,7 +272,7 @@ class BookmarkTableModel(QAbstractTableModel):
                 otherwise invalid (there are no other checks currently).
         """
         tag_exists_check = self.session.query(Tag).filter(
-                Tag.text == new).one_or_none()
+            Tag.text == new).one_or_none()
         if tag_exists_check is not None:
             return False
 
@@ -270,7 +302,7 @@ class BookmarkTableModel(QAbstractTableModel):
         but deletes will not be seen by other operations until a transaction is
         finished. Do not forget to commit after using this method.
         """
-        if not len(tag.bookmarks):
+        if not tag.bookmarks:
             self.session.delete(tag)
             return True
         else:
@@ -297,7 +329,7 @@ class BookmarkTableModel(QAbstractTableModel):
             new_tags = content['tags']
             for tag in new_tags:
                 existingTag = self.session.query(Tag).filter(
-                              Tag.text == tag).first()
+                    Tag.text == tag).first()
                 if existingTag:
                     mark.tags_rel.append(existingTag)
                 else:
@@ -314,6 +346,7 @@ class BookmarkTableModel(QAbstractTableModel):
         return False
 
     def getObj(self, index):
+        "Return an object from the list by its model index."
         try:
             return self.L[index.row()]
         except IndexError:
@@ -329,6 +362,7 @@ class BookmarkTableModel(QAbstractTableModel):
 
 
 class MainWindow(QMainWindow):
+    "RabbitMark application window."
     def __init__(self):
         QMainWindow.__init__(self)
         self.form = Ui_MainWindow()
@@ -342,7 +376,7 @@ class MainWindow(QMainWindow):
         sf.actionDelete.triggered.connect(self.deleteCurrent)
         sf.actionNew.triggered.connect(self.onAddBookmark)
         sf.actionNew_from_clipboard.triggered.connect(
-                self.onAddBookmarkFromClipboard)
+            self.onAddBookmarkFromClipboard)
         sf.actionRenameTag.triggered.connect(self.onRenameTag)
         sf.actionDeleteTag.triggered.connect(self.onDeleteTag)
         sf.actionWayBack.triggered.connect(self.onWayBackMachine)
@@ -383,11 +417,13 @@ class MainWindow(QMainWindow):
         self.form.tagList.itemSelectionChanged.connect(self.doUpdateForSearch)
         self.doUpdateForSearch()
 
+    #pylint: disable=unused-argument
     def closeEvent(self, evt):
         "Catch click of the X button, etc., and properly quit."
         self.quit()
 
     def quit(self):
+        "Clean up and quit RabbitMark."
         # fake changing focus: the widget name for new is arbitrary,
         # one of the editable boxes is required for old
         self.maybeSaveBookmark(old=self.form.nameBox, new=self.form.nameBox)
@@ -399,8 +435,9 @@ class MainWindow(QMainWindow):
         self.doUpdateForSearch()
 
     def onAddBookmarkFromClipboard(self):
+        "Create a new bookmark from the URL on the clipboard."
         pastedUrl = str(QApplication.clipboard().text()).strip()
-        if not '://' in pastedUrl:
+        if '://' not in pastedUrl:
             utils.warningBox("No protocol (e.g., http://) in URL. Adding "
                              "http:// to beginning. You may wish to check "
                              "the URL.", "URL possibly invalid")
@@ -408,6 +445,7 @@ class MainWindow(QMainWindow):
         self.onAddBookmark(urltext=pastedUrl)
 
     def onAddBookmark(self, isChecked=False, urltext="http://"):
+        "Create a new bookmark without a given URL."
         # isChecked is not used
         tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
@@ -418,6 +456,7 @@ class MainWindow(QMainWindow):
         self.form.nameBox.setFocus()
 
     def deleteCurrent(self):
+        "Delete the selected bookmark."
         if not self.sm.hasSelection():
             utils.errorBox("Please select a bookmark to delete.",
                            "No bookmark selected")
@@ -469,9 +508,9 @@ class MainWindow(QMainWindow):
         for i in snapshots[1:]: # first row is headers
             timestamp, pagePath = i[1], i[2]
             formattedTimestamp = datetime.datetime.strptime(
-                    timestamp, '%Y%m%d%H%M%S').strftime(DATE_FORMAT)
+                timestamp, '%Y%m%d%H%M%S').strftime(DATE_FORMAT)
             archivedUrl = "http://web.archive.org/web/%s/%s" % (
-                    timestamp, pagePath)
+                timestamp, pagePath)
             archived.append((formattedTimestamp, timestamp, archivedUrl))
 
         QApplication.restoreOverrideCursor()
@@ -482,6 +521,7 @@ class MainWindow(QMainWindow):
 
 
     def onRenameTag(self):
+        "Rename the selected tag."
         tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
 
@@ -495,7 +535,8 @@ class MainWindow(QMainWindow):
             return
 
         tag = tags[0]
-        new, doContinue = utils.inputBox("New name for tag:", "Rename tag", tag)
+        new, doContinue = utils.inputBox("New name for tag:",
+                                         "Rename tag", tag)
         if doContinue:
             if self.tableModel.renameTag(tag, new):
                 self.resetTagList()
@@ -505,6 +546,7 @@ class MainWindow(QMainWindow):
                                "Cannot rename tag")
 
     def onDeleteTag(self):
+        "Delete the selected tag."
         tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
 
@@ -597,10 +639,10 @@ class MainWindow(QMainWindow):
         oldId = None if mark is None else mark.id
         searchMode = self.form.tagsModeDropdown.currentIndex()
         self.tableModel.updateForSearch(
-                str(self.form.searchBox.text()),
-                selectedTags,
-                self.showPrivates,
-                searchMode)
+            str(self.form.searchBox.text()),
+            selectedTags,
+            self.showPrivates,
+            searchMode)
         self.reselectItem(oldId)
         self.updateTitleCount(self.tableModel.rowCount(self))
 
@@ -645,6 +687,7 @@ class MainWindow(QMainWindow):
                 i.setCursorPosition(0)
 
     def tagsSelect(self, what):
+        "Select tags en masse using the convenience buttons at the bottom."
         # Block signals so that we only have to call itemSelectionChanged
         # once instead of numTags times -- this *greatly* improves performance.
         oldSigs = self.form.tagList.blockSignals(True)
@@ -667,14 +710,14 @@ class MainWindow(QMainWindow):
         currently in the fields so that the model can compare and/or save it.
         """
         return {
-                'name':  str(self.form.nameBox.text()),
-                'url':   str(self.form.urlBox.text()),
-                'descr': str(self.form.descriptionBox.toPlainText()),
-                'priv':  self.form.privateCheck.isChecked(),
-                'tags':  [i.strip() for i in
-                          str(self.form.tagsBox.text()).split(',')
-                          if i.strip() != ''],
-               }
+            'name':  str(self.form.nameBox.text()),
+            'url':   str(self.form.urlBox.text()),
+            'descr': str(self.form.descriptionBox.toPlainText()),
+            'priv':  self.form.privateCheck.isChecked(),
+            'tags':  [i.strip() for i in
+                      str(self.form.tagsBox.text()).split(',')
+                      if i.strip() != ''],
+            }
 
     def updateTitleCount(self, count):
         """
@@ -682,7 +725,7 @@ class MainWindow(QMainWindow):
         /count/.
         """
         self.setWindowTitle("RabbitMark - %i match%s" % (
-                count, '' if count == 1 else 'es'))
+            count, '' if count == 1 else 'es'))
 
 
 class WayBackDialog(QDialog):
@@ -780,7 +823,7 @@ class WayBackDialog(QDialog):
             self.lower = self.curnt + 1
             increaseBy = (self.upper - self.curnt + 1) / 2
             # always move by at least 1, to allow taking the final step
-            #TODO: With the addition of the +1 above, I'm not sure this 
+            #TODO: With the addition of the +1 above, I'm not sure this
             #      conditional is required anymore
             self.curnt = self.curnt + (increaseBy if increaseBy > 0 else 1)
         elif action == 'earlier':
@@ -817,7 +860,7 @@ class WayBackDialog(QDialog):
                     "What do you want to do?"
         else:
             state = self.state_label_template % (
-                    self.curnt+1, self.lower+1, self.upper+1, len(self.sd))
+                self.curnt+1, self.lower+1, self.upper+1, len(self.sd))
         self.form.stateLabel.setText(state)
         self.form.snapshotLabel.setText(self.snapshot_label_template % tstamp)
 
@@ -858,12 +901,14 @@ class WayBackDialog(QDialog):
 
 
 def scan_tags(Session):
+    "Create a list of all existing tags, plus the NOTAGS placeholder."
     session = Session()
     tag_list = [str(i) for i in session.query(Tag).all()]
     tag_list.append(NOTAGS)
     return tag_list
 
 def make_Session():
+    "Create a SQLAlchemy Session object, from which sessions can be spawned."
     engine = create_engine('sqlite:///sorenmarks.db')
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine) # will not recreate existing tables/dbs
@@ -871,13 +916,16 @@ def make_Session():
 
 # http://stackoverflow.com/questions/9671490/
 # how-to-set-sqlite-pragma-statements-with-sqlalchemy
+#pylint: disable=unused-argument
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
+    "Set SQLite pragma options for RabbitMark execution."
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.close()
 
 def startQt():
+    "Application entry point."
     app = QApplication(sys.argv)
     mw = MainWindow()
     app.focusChanged.connect(mw.maybeSaveBookmark)

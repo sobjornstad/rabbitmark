@@ -38,7 +38,7 @@ load-plugins=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-#disable=
+disable=no-else-return
 
 
 [REPORTS]
@@ -117,7 +117,7 @@ additional-builtins=
 required-attributes=
 
 # List of builtins function names that should not be used, separated by a comma
-bad-functions=map,filter,apply,input
+bad-functions=
 
 # Regular expression which should only match correct module names
 module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
@@ -135,13 +135,13 @@ function-rgx=[a-z_][a-zA-Z0-9_]{2,30}$
 method-rgx=[a-z_][a-zA-Z0-9_]{2,30}$
 
 # Regular expression which should only match correct instance attribute names
-attr-rgx=[a-z_][a-zA-Z0-9_]{0,30}$
+attr-rgx=([a-z_][a-zA-Z0-9_]{0,30}|Session)$
 
 # Regular expression which should only match correct argument names
-argument-rgx=[a-z][a-zA-Z0-9_]{0,30}$
+argument-rgx=([a-z_][a-zA-Z0-9_]{0,30}|Session)$
 
 # Regular expression which should only match correct variable names
-variable-rgx=[a-z][a-zA-Z0-9]{0,30}$
+variable-rgx=([a-z_][a-zA-Z0-9_]{0,30}|Session)$
 
 # Regular expression which should only match correct attribute names in class
 # bodies
