@@ -5,7 +5,7 @@
 Largely copied from Personal Indexer.
 """
 
-from PyQt4.QtGui import QDialog, QMessageBox, QInputDialog, QLineEdit
+from PyQt5.QtWidgets import QDialog, QMessageBox, QInputDialog, QLineEdit
 
 def informationBox(text, title=None):
     """
@@ -70,4 +70,4 @@ def inputBox(label, title=None, defaultText=None):
         ret = QInputDialog.getText(None, title, label, text=defaultText)
     else:
         ret = QInputDialog.getText(None, title, label)
-    return unicode(ret[0]), ret[1]
+    return str(ret[0]), ret[1]

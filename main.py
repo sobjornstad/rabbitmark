@@ -14,16 +14,16 @@
 #TODO: Add some sort of inter-item linkage function.
 
 import datetime
-import requests
 import sys
 
+import requests
+from PyQt5.QtWidgets import QApplication, QMainWindow, \
+        QShortcut, QMessageBox, QDialog
+from PyQt5.QtGui import QDesktopServices, QKeySequence, QCursor
+from PyQt5.QtCore import Qt, QAbstractTableModel, QUrl, pyqtSignal, pyqtSlot
 from sqlalchemy import create_engine, event, and_, or_
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
-
-from PyQt4.QtGui import QApplication, QMainWindow, QDesktopServices, \
-        QShortcut, QKeySequence, QMessageBox, QDialog, QCursor
-from PyQt4.QtCore import Qt, QAbstractTableModel, SIGNAL, QUrl
 
 from forms.main import Ui_MainWindow
 from forms.archivesearch import Ui_Dialog as Ui_ArchiveDialog
@@ -41,6 +41,9 @@ class BookmarkTableModel(QAbstractTableModel):
     code should be moved into a TagManager or a set of functions of that
     description soon.
     """
+    dataChanged = pyqtSignal()
+
+
     columns = {'Name': 0, 'Tags': 1}
     def __init__(self, parent, Session, *args):
         QAbstractTableModel.__init__(self)
@@ -88,7 +91,7 @@ class BookmarkTableModel(QAbstractTableModel):
         if col == self.columns['Name']:
             key = lambda i: i.name
         elif col == self.columns['Tags']:
-            print "DEBUG: Sorting by this column is not supported."
+            print("DEBUG: Sorting by this column is not supported.")
             key = lambda i: None
         else:
             assert False, "Invalid column %r requested from model's " \
@@ -191,7 +194,7 @@ class BookmarkTableModel(QAbstractTableModel):
         for mark in query:
             self.L.append(mark)
         self.sort(0)
-        self.emit(SIGNAL("dataChanged"))
+        self.dataChanged.emit()
         self.endResetModel()
 
     def deleteBookmark(self, index):
@@ -354,8 +357,7 @@ class MainWindow(QMainWindow):
         sf.copyUrlButton.clicked.connect(self.copyUrl)
         sf.browseUrlButton.clicked.connect(self.openUrl)
         findShortcut = QShortcut(QKeySequence("Ctrl+F"), sf.searchBox)
-        findShortcut.connect(findShortcut, SIGNAL("activated()"),
-                             sf.searchBox.setFocus)
+        findShortcut.activated.connect(sf.searchBox.setFocus)
 
         # Set up tag mode dropdown.
         # Indexes of these options should match with TAG_SEARCH_MODES.
@@ -397,7 +399,7 @@ class MainWindow(QMainWindow):
         self.doUpdateForSearch()
 
     def onAddBookmarkFromClipboard(self):
-        pastedUrl = unicode(QApplication.clipboard().text()).strip()
+        pastedUrl = str(QApplication.clipboard().text()).strip()
         if not '://' in pastedUrl:
             utils.warningBox("No protocol (e.g., http://) in URL. Adding "
                              "http:// to beginning. You may wish to check "
@@ -407,7 +409,7 @@ class MainWindow(QMainWindow):
 
     def onAddBookmark(self, isChecked=False, urltext="http://"):
         # isChecked is not used
-        tags = [unicode(i.text())
+        tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
         newMark = self.tableModel.makeNewBookmark(urltext, tags)
         self.doUpdateForSearch()
@@ -480,7 +482,7 @@ class MainWindow(QMainWindow):
 
 
     def onRenameTag(self):
-        tags = [unicode(i.text())
+        tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
 
         if len(tags) < 1:
@@ -503,7 +505,7 @@ class MainWindow(QMainWindow):
                                "Cannot rename tag")
 
     def onDeleteTag(self):
-        tags = [unicode(i.text())
+        tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
 
         if len(tags) < 1:
@@ -589,13 +591,13 @@ class MainWindow(QMainWindow):
 
         No arguments, no return.
         """
-        selectedTags = [unicode(i.text())
+        selectedTags = [str(i.text())
                         for i in self.form.tagList.selectedItems()]
         mark = self.tableModel.getObj(self.tableView.currentIndex())
         oldId = None if mark is None else mark.id
         searchMode = self.form.tagsModeDropdown.currentIndex()
         self.tableModel.updateForSearch(
-                unicode(self.form.searchBox.text()),
+                str(self.form.searchBox.text()),
                 selectedTags,
                 self.showPrivates,
                 searchMode)
@@ -665,12 +667,12 @@ class MainWindow(QMainWindow):
         currently in the fields so that the model can compare and/or save it.
         """
         return {
-                'name':  unicode(self.form.nameBox.text()),
-                'url':   unicode(self.form.urlBox.text()),
-                'descr': unicode(self.form.descriptionBox.toPlainText()),
+                'name':  str(self.form.nameBox.text()),
+                'url':   str(self.form.urlBox.text()),
+                'descr': str(self.form.descriptionBox.toPlainText()),
                 'priv':  self.form.privateCheck.isChecked(),
                 'tags':  [i.strip() for i in
-                          unicode(self.form.tagsBox.text()).split(',')
+                          str(self.form.tagsBox.text()).split(',')
                           if i.strip() != ''],
                }
 
@@ -857,7 +859,7 @@ class WayBackDialog(QDialog):
 
 def scan_tags(Session):
     session = Session()
-    tag_list = [unicode(i) for i in session.query(Tag).all()]
+    tag_list = [str(i) for i in session.query(Tag).all()]
     tag_list.append(NOTAGS)
     return tag_list
 
