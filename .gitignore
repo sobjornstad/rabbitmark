@@ -1,3 +1,5 @@
 *.db
 *.pyc
 forms/*
+__pycache__/
+.mypy_cache/
