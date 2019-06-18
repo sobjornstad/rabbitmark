@@ -1,11 +1,13 @@
-# -* coding: utf-8 *-
-# Copyright 2015 Soren Bjornstad. All rights reserved.
+# This file is part of RabbitMark.
+# Copyright 2015, 2019 Soren Bjornstad. All rights reserved.
 
 """
-Largely copied from Personal Indexer.
+utils.py - Qt GUI utility functions
 """
 
-from PyQt5.QtWidgets import QDialog, QMessageBox, QInputDialog, QLineEdit
+# Yet again, pylint can't seem to read PyQt5's module structure properly...
+# pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QMessageBox, QInputDialog
 
 def informationBox(text, title=None):
     """
