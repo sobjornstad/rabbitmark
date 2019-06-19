@@ -28,7 +28,6 @@ from models import Bookmark, Tag, Base
 import utils
 
 NOTAGS = "(no tags)"
-TAG_SEARCH_MODES = {'AND': 1, 'OR': 0}
 DATE_FORMAT = '%Y-%m-%d'
 
 class BookmarkTableModel(QAbstractTableModel):
@@ -85,7 +84,7 @@ class BookmarkTableModel(QAbstractTableModel):
         self.session = self.Session()
         self.headerdata = ("Name", "Tags")
         self.L = None
-        self.updateForSearch("", [], False, TAG_SEARCH_MODES['OR'])
+        self.updateForSearch("", [], False, utils.SearchMode.Or)
 
     ### Standard reimplemented methods ###
     def rowCount(self, parent): #pylint: disable=no-self-use,unused-argument
@@ -147,7 +146,7 @@ class BookmarkTableModel(QAbstractTableModel):
 
         # TODO: This query uses some unnecessary duplication -- multiple
         # filter()s can be used for the OR query mode too.
-        if searchMode == TAG_SEARCH_MODES['OR']:
+        if searchMode == utils.SearchMode.Or:
             tag_query = []
             if NOTAGS in tags:
                 tags.remove(NOTAGS)
@@ -165,7 +164,7 @@ class BookmarkTableModel(QAbstractTableModel):
                     or_(*tag_query)
                 ))
 
-        elif searchMode == TAG_SEARCH_MODES['AND']:
+        elif searchMode == utils.SearchMode.And:
             query = self.session.query(Bookmark).filter(
                 or_(
                     Bookmark.name.like(nameText),
@@ -335,7 +334,7 @@ class MainWindow(QMainWindow):
         findShortcut.activated.connect(sf.searchBox.setFocus)
 
         # Set up tag mode dropdown.
-        # Indexes of these options should match with TAG_SEARCH_MODES.
+        # Indexes of these options should match with utils.SearchMode.
         sf.tagsModeDropdown.addItem("Require at least one selected tag (OR)")
         sf.tagsModeDropdown.addItem("Require all selected tags (AND)")
         sf.tagsModeDropdown.activated.connect(self.doUpdateForSearch)
@@ -414,11 +413,7 @@ class MainWindow(QMainWindow):
         self.tableView.setCurrentIndex(index)
 
     def copyUrl(self):
-        session = self.Session()
-        print(session.query(Bookmark).filter(Bookmark.tags.in_(["a", "b"])).all())
-
-        # FIXME DEBUG
-        #QApplication.clipboard().setText(self.form.urlBox.text())
+        QApplication.clipboard().setText(self.form.urlBox.text())
     def openUrl(self):
         QDesktopServices.openUrl(QUrl(self.form.urlBox.text()))
 
@@ -587,7 +582,8 @@ class MainWindow(QMainWindow):
                         for i in self.form.tagList.selectedItems()]
         mark = self.tableModel.getObj(self.tableView.currentIndex())
         oldId = None if mark is None else mark.id
-        searchMode = self.form.tagsModeDropdown.currentIndex()
+        searchMode = utils.SearchMode(
+            self.form.tagsModeDropdown.currentIndex())
         self.tableModel.updateForSearch(
             str(self.form.searchBox.text()),
             selectedTags,

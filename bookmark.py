@@ -1,6 +1,7 @@
 from typing import Iterable
 
 from models import Bookmark, Tag
+import utils
 
 
 def add_bookmark(session, url: str, tags: Iterable[str]) -> Bookmark:

@@ -2,12 +2,21 @@
 # Copyright 2015, 2019 Soren Bjornstad. All rights reserved.
 
 """
-utils.py - Qt GUI utility functions
+utils.py - Qt GUI and other utility functions
+
+(These should be split up in another refactor round in the future.)
 """
 
 # Yet again, pylint can't seem to read PyQt5's module structure properly...
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
+from enum import Enum, unique
+
+@unique
+class SearchMode(Enum):
+    Or = 0
+    And = 1
+
 
 def informationBox(text, title=None):
     """
