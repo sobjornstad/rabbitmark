@@ -136,9 +136,8 @@ class BookmarkTableModel(QAbstractTableModel):
 
     def deleteBookmark(self, index):
         """
-        Delete the bookmark at /index/ in the table. Return the pk of the entry
-        above it to select after deletion (below if the top), or None if this
-        is the only entry.
+        Delete the bookmark at /index/ in the table. Return the index of the
+        entry to select after deletion, or None if this is the only entry.
         """
         row = index.row()
         mark = self.L[row]
@@ -155,15 +154,10 @@ class BookmarkTableModel(QAbstractTableModel):
         bookmark.delete_bookmark(self.session, mark)
         self.session.commit()
 
-        #TODO: When using beginRemoveRows(), a blank row is left in the table.
-        # This is a little inconvenient, but it *works* for now.
-        #self.beginRemoveRows(index, row, row)
         self.beginResetModel()
         del self.L[row]
         self.endResetModel()
-        #self.endRemoveRows()
-        #self.emit(SIGNAL("dataChanged"))
-        return nextObj.id
+        return self.indexFromPk(nextObj.id)
 
     def renameTag(self, tag, new):
         """
@@ -350,11 +344,10 @@ class MainWindow(QMainWindow):
             utils.errorBox("Please select a bookmark to delete.",
                            "No bookmark selected")
             return
-        index = self.tableView.currentIndex()
-        nextPk = self.tableModel.deleteBookmark(index)
-        index = self.tableModel.indexFromPk(nextPk)
+        curIndex = self.tableView.currentIndex()
+        newIndex = self.tableModel.deleteBookmark(curIndex)
         self.resetTagList()
-        self.tableView.setCurrentIndex(index)
+        self.tableView.setCurrentIndex(newIndex)
 
     def copyUrl(self):
         QApplication.clipboard().setText(self.form.urlBox.text())
