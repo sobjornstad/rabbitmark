@@ -12,11 +12,13 @@ utils.py - Qt GUI and other utility functions
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
 from enum import Enum, unique
 
+NOTAGS = "(no tags)"
+DATE_FORMAT = '%Y-%m-%d'
+
 @unique
 class SearchMode(Enum):
     Or = 0
     And = 1
-
 
 def informationBox(text, title=None):
     """

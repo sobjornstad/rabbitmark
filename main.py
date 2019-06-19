@@ -27,8 +27,6 @@ from forms.archivesearch import Ui_Dialog as Ui_ArchiveDialog
 from models import Bookmark, Tag, Base
 import utils
 
-NOTAGS = "(no tags)"
-DATE_FORMAT = '%Y-%m-%d'
 
 class BookmarkTableModel(QAbstractTableModel):
     """
@@ -132,60 +130,8 @@ class BookmarkTableModel(QAbstractTableModel):
     def updateForSearch(self, searchText, tags, showPrivates, searchMode):
         nameText = "%" + searchText + "%"
         self.beginResetModel()
-        self.L = []
-
-        # SQLAlchemy doesn't support in_ queries on many-to-many relationships,
-        # so it's necessary to get the text of the tags and compare those.
-        # NOTE: without my even having to do anything, this behaves the way I
-        # want it to for OR when nothing is selected (equivalent to
-        # everything). For AND, we explicitly check whether /tags/ is empty and
-        # don't do a filter if it is.
-        tag_objs = self.session.query(Tag).filter(
-            or_(*[Tag.text.like(t) for t in tags]))
-        allowed_tags = [i.text for i in tag_objs]
-
-        # TODO: This query uses some unnecessary duplication -- multiple
-        # filter()s can be used for the OR query mode too.
-        if searchMode == utils.SearchMode.Or:
-            tag_query = []
-            if NOTAGS in tags:
-                tags.remove(NOTAGS)
-                tag_query = [Bookmark.tags is None]
-            if tags:
-                tag_query += [
-                    Bookmark.tags.any(Tag.text.in_(allowed_tags))]
-            query = self.session.query(Bookmark).filter(
-                and_(
-                    or_(
-                        Bookmark.name.like(nameText),
-                        Bookmark.url.like(nameText),
-                        Bookmark.description.like(nameText)
-                    ),
-                    or_(*tag_query)
-                ))
-
-        elif searchMode == utils.SearchMode.And:
-            query = self.session.query(Bookmark).filter(
-                or_(
-                    Bookmark.name.like(nameText),
-                    Bookmark.url.like(nameText),
-                    Bookmark.description.like(nameText)
-                ))
-            if NOTAGS in tags:
-                query = query.filter(Bookmark.tags is None)
-            if tags: # don't filter at all if no tags selected
-                for tag in allowed_tags:
-                    query = query.filter(
-                        Bookmark.tags.any(Tag.text == tag))
-
-        else:
-            assert False, "in updateForSearch(): Search mode %r " \
-                          "unimplemented" % searchMode
-
-        if not showPrivates:
-            query = query.filter(Bookmark.private == False)
-        for mark in query:
-            self.L.append(mark)
+        self.L = bookmark.find_bookmarks(self.session, searchText, tags,
+                                         showPrivates, searchMode)
         self.sort(0)
         self.dataChanged.emit()
         self.endResetModel()
@@ -280,7 +226,7 @@ class BookmarkTableModel(QAbstractTableModel):
             for tag in mark.tags:
                 if tag.text not in new_tags:
                     mark.tags.remove(tag)
-                    self.maybeExpungeTag(tag)
+                    bookmark.maybe_expunge_tag(self.session, tag)
             self.commit()
             return True
         return False
@@ -453,7 +399,7 @@ class MainWindow(QMainWindow):
         for i in snapshots[1:]: # first row is headers
             timestamp, pagePath = i[1], i[2]
             formattedTimestamp = datetime.datetime.strptime(
-                timestamp, '%Y%m%d%H%M%S').strftime(DATE_FORMAT)
+                timestamp, '%Y%m%d%H%M%S').strftime(utils.DATE_FORMAT)
             archivedUrl = "http://web.archive.org/web/%s/%s" % (
                 timestamp, pagePath)
             archived.append((formattedTimestamp, timestamp, archivedUrl))
@@ -505,10 +451,10 @@ class MainWindow(QMainWindow):
             return
 
         tag = tags[0]
-        if tag == NOTAGS:
+        if tag == utils.NOTAGS:
             utils.errorBox("You cannot delete '%s'. It is not a tag; rather, "
                            "it indicates that you would like to search for "
-                           "items that do not have any tags." % NOTAGS,
+                           "items that do not have any tags." % utils.NOTAGS,
                            "Not deleteable")
             return
 
@@ -847,7 +793,7 @@ def scan_tags(Session):
     "Create a list of all existing tags, plus the NOTAGS placeholder."
     session = Session()
     tag_list = [str(i) for i in session.query(Tag).all()]
-    tag_list.append(NOTAGS)
+    tag_list.append(utils.NOTAGS)
     return tag_list
 
 def make_Session():
