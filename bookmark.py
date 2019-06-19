@@ -25,11 +25,11 @@ def add_tag_to_bookmark(session, bookmark: Bookmark, tag: str) -> Tag:
     """
     existing_tag = session.query(Tag).filter(Tag.text == tag).first()
     if existing_tag:
-        bookmark.tags_rel.append(existing_tag)
+        bookmark.tags.append(existing_tag)
         return existing_tag
     else:
         new_tag = Tag(text=tag)
-        bookmark.tags_rel.append(new_tag)
+        bookmark.tags.append(new_tag)
         return new_tag
 
 
@@ -38,7 +38,7 @@ def delete_bookmark(session, bookmark: Bookmark) -> None:
     Delete the specified bookmark. If the bookmark was the last to use any of
     its tags, delete the tag(s) as well.
     """
-    tags = bookmark.tags_rel
+    tags = bookmark.tags
     session.delete(bookmark)
     for tag in tags:
         maybe_expunge_tag(session, tag)

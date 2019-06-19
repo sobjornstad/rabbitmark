@@ -60,7 +60,7 @@ class BookmarkTableModel(QAbstractTableModel):
             if self.name == 'Name':
                 return bookmark.name
             elif self.name == 'Tags':
-                return ', '.join(i.text for i in bookmark.tags_rel)
+                return ', '.join(i.text for i in bookmark.tags)
             raise AssertionError("Model column %i not defined in data()"
                                  % self.value)
 
@@ -151,10 +151,10 @@ class BookmarkTableModel(QAbstractTableModel):
             tag_query = []
             if NOTAGS in tags:
                 tags.remove(NOTAGS)
-                tag_query = [Bookmark.tags_rel is None]
+                tag_query = [Bookmark.tags is None]
             if tags:
                 tag_query += [
-                    Bookmark.tags_rel.any(Tag.text.in_(allowed_tags))]
+                    Bookmark.tags.any(Tag.text.in_(allowed_tags))]
             query = self.session.query(Bookmark).filter(
                 and_(
                     or_(
@@ -173,11 +173,11 @@ class BookmarkTableModel(QAbstractTableModel):
                     Bookmark.description.like(nameText)
                 ))
             if NOTAGS in tags:
-                query = query.filter(Bookmark.tags_rel is None)
+                query = query.filter(Bookmark.tags is None)
             if tags: # don't filter at all if no tags selected
                 for tag in allowed_tags:
                     query = query.filter(
-                        Bookmark.tags_rel.any(Tag.text == tag))
+                        Bookmark.tags.any(Tag.text == tag))
 
         else:
             assert False, "in updateForSearch(): Search mode %r " \
@@ -260,7 +260,7 @@ class BookmarkTableModel(QAbstractTableModel):
                 mark.description == content['descr'] and
                 mark.url == content['url'] and
                 mark.private == content['priv'] and
-                [i.text for i in mark.tags_rel] == content['tags']):
+                [i.text for i in mark.tags] == content['tags']):
             mark.name = content['name']
             mark.description = content['descr']
             mark.url = content['url']
@@ -272,15 +272,15 @@ class BookmarkTableModel(QAbstractTableModel):
                 existingTag = self.session.query(Tag).filter(
                     Tag.text == tag).first()
                 if existingTag:
-                    mark.tags_rel.append(existingTag)
+                    mark.tags.append(existingTag)
                 else:
                     new_tag = Tag(text=tag)
                     self.session.add(new_tag)
-                    mark.tags_rel.append(new_tag)
+                    mark.tags.append(new_tag)
             # remove tags that are no longer used
-            for tag in mark.tags_rel:
+            for tag in mark.tags:
                 if tag.text not in new_tags:
-                    mark.tags_rel.remove(tag)
+                    mark.tags.remove(tag)
                     self.maybeExpungeTag(tag)
             self.commit()
             return True
@@ -414,7 +414,11 @@ class MainWindow(QMainWindow):
         self.tableView.setCurrentIndex(index)
 
     def copyUrl(self):
-        QApplication.clipboard().setText(self.form.urlBox.text())
+        session = self.Session()
+        print(session.query(Bookmark).filter(Bookmark.tags.in_(["a", "b"])).all())
+
+        # FIXME DEBUG
+        #QApplication.clipboard().setText(self.form.urlBox.text())
     def openUrl(self):
         QDesktopServices.openUrl(QUrl(self.form.urlBox.text()))
 
@@ -625,7 +629,7 @@ class MainWindow(QMainWindow):
             self.form.urlBox.setText(mark.url)
             self.form.descriptionBox.setPlainText(mark.description)
             self.form.privateCheck.setChecked(mark.private)
-            tags = ', '.join([i.text for i in mark.tags_rel])
+            tags = ', '.join([i.text for i in mark.tags])
             self.form.tagsBox.setText(tags)
             # If a name or URL is too long to fit in the box, this will make
             # the box show the beginning of it rather than the end.
@@ -852,7 +856,7 @@ def scan_tags(Session):
 
 def make_Session():
     "Create a SQLAlchemy Session object, from which sessions can be spawned."
-    engine = create_engine('sqlite:///sorenmarks.db')
+    engine = create_engine('sqlite:///test.db')
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine) # will not recreate existing tables/dbs
     return Session
