@@ -1,9 +1,13 @@
+"""
+bookmark.py -- RabbitMark bookmark operations
+"""
+
 from typing import Iterable, Sequence
 
 from sqlalchemy import or_
 
-from models import Bookmark, Tag
 from utils import NOTAGS, SearchMode
+from .models import Bookmark, Tag
 
 
 def add_bookmark(session, url: str, tags: Iterable[str]) -> Bookmark:

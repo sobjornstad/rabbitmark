@@ -12,16 +12,16 @@ import sys
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication, QMainWindow, \
-        QShortcut, QMessageBox, QDialog
+    QShortcut, QMessageBox
 from PyQt5.QtGui import QDesktopServices, QKeySequence, QCursor
 from PyQt5.QtCore import Qt, QAbstractTableModel, QUrl, pyqtSignal
-from sqlalchemy import create_engine, event, and_, or_
+from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
-import bookmark
 from forms.main import Ui_MainWindow
-from models import Bookmark, Tag, Base
+import librm.bookmark as bookmark
+from librm.models import Tag, Base
 import utils
 import wayback
 
