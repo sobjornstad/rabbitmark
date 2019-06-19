@@ -208,11 +208,9 @@ class BookmarkTableModel(QAbstractTableModel):
         except IndexError:
             # there are no other items
             nextObj = None
-        tags = mark.tags_rel
-        self.session.delete(mark)
-        for tag in tags:
-            self.maybeExpungeTag(tag)
-        self.commit()
+
+        bookmark.delete_bookmark(self.session, mark)
+        self.session.commit()
 
         #TODO: When using beginRemoveRows(), a blank row is left in the table.
         # This is a little inconvenient, but it *works* for now.
@@ -250,25 +248,6 @@ class BookmarkTableModel(QAbstractTableModel):
         tag_obj = self.session.query(Tag).filter(Tag.text == tag).one()
         self.session.delete(tag_obj)
         self.commit()
-
-    def maybeExpungeTag(self, tag):
-        """
-        Delete /tag/ from the tags table if it is no longer referenced by
-        any bookmarks.
-
-        Return:
-            True if the tag was deleted.
-            False if the tag is still referenced and was not deleted.
-
-        WARNING: This method does not call commit() for performance reasons,
-        but deletes will not be seen by other operations until a transaction is
-        finished. Do not forget to commit after using this method.
-        """
-        if not tag.bookmarks:
-            self.session.delete(tag)
-            return True
-        else:
-            return False
 
     def saveIfEdited(self, mark, content):
         """
