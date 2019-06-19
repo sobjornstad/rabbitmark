@@ -21,6 +21,7 @@ from sqlalchemy import create_engine, event, and_, or_
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
+import bookmark
 from forms.main import Ui_MainWindow
 from forms.archivesearch import Ui_Dialog as Ui_ArchiveDialog
 from models import Bookmark, Tag, Base
@@ -128,35 +129,6 @@ class BookmarkTableModel(QAbstractTableModel):
             if obj.id == pk:
                 return self.index(row, 0)
         return None
-
-    def makeNewBookmark(self, url="http://", tags=None):
-        """
-        Create a new bookmark with boilerplate and the provided /url/ or
-        'http://' if none. Return the object created.
-        """
-        new_name = ""
-        new_url = url
-        if tags is None:
-            tags = []
-        new_tags = ', '.join(tags)
-        new_descr = ""
-        new_private = False
-
-        g_bookmark = Bookmark(name=new_name, url=new_url,
-                              description=new_descr, private=new_private)
-        self.session.add(g_bookmark)
-
-        tag_list = [tag.strip() for tag in new_tags.split(',')]
-        for tag in tag_list:
-            existingTag = self.session.query(Tag).filter(
-                Tag.text == tag).first()
-            if existingTag:
-                g_bookmark.tags_rel.append(existingTag)
-            else:
-                new_tag = Tag(text=tag)
-                g_bookmark.tags_rel.append(new_tag)
-        self.session.flush() # we'll presumably commit as soon as we edit it
-        return g_bookmark
 
     def updateForSearch(self, searchText, tags, showPrivates, searchMode):
         nameText = "%" + searchText + "%"
@@ -432,16 +404,21 @@ class MainWindow(QMainWindow):
                              "http:// to beginning. You may wish to check "
                              "the URL.", "URL possibly invalid")
             pastedUrl = 'http://' + pastedUrl
-        self.onAddBookmark(urltext=pastedUrl)
+        self._newBookmark(pastedUrl)
 
-    def onAddBookmark(self, isChecked=False, urltext="http://"):
+    def onAddBookmark(self):
         "Create a new bookmark without a given URL."
-        # isChecked is not used
+        self._newBookmark("http://")
+
+    def _newBookmark(self, url):
         tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
-        newMark = self.tableModel.makeNewBookmark(urltext, tags)
+        session = self.Session()
+        newBookmark = bookmark.add_bookmark(session, url, tags)
+        session.commit()
+
         self.doUpdateForSearch()
-        index = self.tableModel.indexFromPk(newMark.id)
+        index = self.tableModel.indexFromPk(newBookmark.id)
         self.tableView.setCurrentIndex(index)
         self.form.nameBox.setFocus()
 
