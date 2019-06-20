@@ -128,7 +128,7 @@ class BookmarkTableModel(QAbstractTableModel):
     def updateForSearch(self, searchText, tags, showPrivates, searchMode):
         nameText = "%" + searchText + "%"
         self.beginResetModel()
-        self.L = bookmark.find_bookmarks(self.session, searchText, tags,
+        self.L = bookmark.find_bookmarks(self.session, nameText, tags,
                                          showPrivates, searchMode)
         self.sort(0)
         self.dataChanged.emit()
