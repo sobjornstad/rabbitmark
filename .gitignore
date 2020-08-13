@@ -3,3 +3,7 @@
 forms/*
 __pycache__/
 .mypy_cache/
+.pytest_cache/
+venv/
+*.egg-info/
+.vscode/

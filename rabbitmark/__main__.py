@@ -19,11 +19,11 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
-from forms.main import Ui_MainWindow
-import librm.bookmark as bookmark
-from librm.models import Tag, Base
-import utils
-import wayback
+from .forms.main import Ui_MainWindow
+from .librm import bookmark
+from .librm.models import Tag, Base
+from . import utils
+from . import wayback
 
 
 class BookmarkTableModel(QAbstractTableModel):
@@ -579,7 +579,7 @@ def scan_tags(Session):
 
 def make_Session():
     "Create a SQLAlchemy Session object, from which sessions can be spawned."
-    engine = create_engine('sqlite:///test.db')
+    engine = create_engine('sqlite:///sorenmarks-test.db')
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine) # will not recreate existing tables/dbs
     return Session

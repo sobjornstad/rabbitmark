@@ -6,7 +6,7 @@ from typing import Iterable, Sequence
 
 from sqlalchemy import or_
 
-from utils import NOTAGS, SearchMode
+from ..utils import NOTAGS, SearchMode
 from .models import Bookmark, Tag
 
 

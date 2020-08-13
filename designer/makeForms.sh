@@ -19,7 +19,7 @@ do
     if [ $i -nt forms/$moduleName.py ]; then
         didUpdate=1
         echo "Updating: $moduleName"
-        pyuic5 $i -o forms/$moduleName.py
+        pyuic5 $i -o rabbitmark/forms/$moduleName.py
     fi
     #echo "import $moduleName" >> $packageInit
 done
