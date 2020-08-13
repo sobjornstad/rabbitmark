@@ -1,5 +1,5 @@
 """
-wayback.py -- class for searching the WayBackMachine
+wayback_search_dialog.py -- interface for searching the WayBackMachine
 """
 
 import datetime
@@ -12,7 +12,7 @@ from PyQt5.QtCore import QUrl
 
 from .forms.archivesearch import Ui_Dialog as Ui_ArchiveDialog
 from .librm import binary_search
-from .librm import wayback_search
+from .librm import wayback_snapshot
 from . import utils
 
 
@@ -23,7 +23,7 @@ class WayBackDialog(QDialog):
 
     To set up the dialog, a sequence of WaybackSnapshots must be provided to
     the constructor; these can be obtained by a call to
-    wayback_search.get_snapshots().
+    wayback_snapshot.get_snapshots().
 
     When the user has made a selection, exec_() will return an index value into
     the snapshotData list corresponding to the snapshot the user selected, or
@@ -158,7 +158,7 @@ def way_back_from_url(parent, original_url: str):
     Returns None if the user canceled the process, or the new URL if one was
     selected.
     """
-    snapshots = wayback_search.get_snapshots(original_url)
+    snapshots = wayback_snapshot.get_snapshots(original_url)
     QApplication.restoreOverrideCursor()
 
     if not snapshots:

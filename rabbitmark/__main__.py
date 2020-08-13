@@ -23,7 +23,7 @@ from .forms.main import Ui_MainWindow
 from .librm import bookmark
 from .librm.models import Tag, Base
 from . import utils
-from . import wayback
+from . import wayback_search_dialog
 
 
 class BookmarkTableModel(QAbstractTableModel):
@@ -357,7 +357,7 @@ class MainWindow(QMainWindow):
     def onWayBackMachine(self):
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         mark = self.tableModel.getObj(self.tableView.currentIndex())
-        archiveUrl = wayback.way_back_from_url(self, mark.url)
+        archiveUrl = wayback_search_dialog.way_back_from_url(self, mark.url)
         if archiveUrl is not None:
             self.form.urlBox.setText(archiveUrl)
 
