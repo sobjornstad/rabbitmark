@@ -1,4 +1,6 @@
 *.db
+*.db-shm*
+*.db-wal*
 *.pyc
 forms/*
 __pycache__/

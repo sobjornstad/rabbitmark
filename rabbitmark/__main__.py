@@ -21,6 +21,7 @@ from sqlalchemy.orm import sessionmaker
 
 from .forms.main import Ui_MainWindow
 from .librm import bookmark
+from .librm import tag as tag_ops
 from .librm.models import Tag, Base
 from . import utils
 from . import wayback_search_dialog
@@ -159,33 +160,6 @@ class BookmarkTableModel(QAbstractTableModel):
         self.endResetModel()
         return self.indexFromPk(nextObj.id)
 
-    def renameTag(self, tag, new):
-        """
-        Rename tag /tag/ to /new/.
-
-        Return:
-            True if tag was renamed.
-            False if another tag already existed with name /new/ or it is
-                otherwise invalid (there are no other checks currently).
-        """
-        tag_exists_check = self.session.query(Tag).filter(
-            Tag.text == new).one_or_none()
-        if tag_exists_check is not None:
-            return False
-
-        tag_obj = self.session.query(Tag).filter(Tag.text == tag).one()
-        tag_obj.text = new
-        self.commit()
-        return True
-
-    def deleteTag(self, tag):
-        """
-        Delete the /tag/ from all bookmarks.
-        """
-        tag_obj = self.session.query(Tag).filter(Tag.text == tag).one()
-        self.session.delete(tag_obj)
-        self.commit()
-
     def saveIfEdited(self, mark, content):
         """
         If the content in 'content' differs from the data in the db obj
@@ -264,8 +238,6 @@ class MainWindow(QMainWindow):
         sf.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         sf.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
         sf.tagsInvertButton.clicked.connect(lambda: self.tagsSelect('invert'))
-        #self.form.tagsSaveButton.
-        #self.form.tagsLoadButton.
         sf.copyUrlButton.clicked.connect(self.copyUrl)
         sf.browseUrlButton.clicked.connect(self.openUrl)
         findShortcut = QShortcut(QKeySequence("Ctrl+F"), sf.searchBox)
@@ -285,7 +257,7 @@ class MainWindow(QMainWindow):
         self.sm.selectionChanged.connect(self.fillEditPane)
 
         # set up tag list
-        self.tags = scan_tags(self.Session)
+        self.tags = tag_ops.scan_tags(self.Session())
         for i in self.tags:
             self.form.tagList.addItem(i)
         self.form.tagList.sortItems()
@@ -379,7 +351,7 @@ class MainWindow(QMainWindow):
         new, doContinue = utils.inputBox("New name for tag:",
                                          "Rename tag", tag)
         if doContinue:
-            if self.tableModel.renameTag(tag, new):
+            if tag_ops.rename_tag(self.Session(), tag, new):
                 self.resetTagList()
                 self.fillEditPane()
             else:
@@ -412,7 +384,7 @@ class MainWindow(QMainWindow):
                               "all of your bookmarks. Are you sure you want "
                               "to continue?" % tag, "Delete tag?")
         if r == QMessageBox.Yes:
-            self.tableModel.deleteTag(tag)
+            tag_ops.delete_tag(self.Session(), tag)
             self.resetTagList()
             self.fillEditPane()
 
@@ -421,7 +393,7 @@ class MainWindow(QMainWindow):
         Update the tag list widget to match the current state of the db.
         """
         # Get updated tag list.
-        self.tags = scan_tags(self.Session)
+        self.tags = tag_ops.scan_tags(self.Session())
 
         # Remove tags that no longer exist.
         toRemove = [self.form.tagList.item(i)
@@ -569,13 +541,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("RabbitMark - %i match%s" % (
             count, '' if count == 1 else 'es'))
 
-
-def scan_tags(Session):
-    "Create a list of all existing tags, plus the NOTAGS placeholder."
-    session = Session()
-    tag_list = [str(i) for i in session.query(Tag).all()]
-    tag_list.append(utils.NOTAGS)
-    return tag_list
 
 def make_Session():
     "Create a SQLAlchemy Session object, from which sessions can be spawned."
