@@ -79,7 +79,7 @@ class MainWindow(QMainWindow):
         self.sm.selectionChanged.connect(self.fillEditPane)
 
         # set up tag list
-        self.tags = tag_ops.scan_tags(self.session)
+        self.tags = tag_ops.scan_tags(self.session, self.showPrivates)
         for i in self.tags:
             self.form.tagList.addItem(i)
         self.form.tagList.sortItems()
@@ -109,8 +109,13 @@ class MainWindow(QMainWindow):
         sys.exit(0)
 
     def onTogglePrivate(self) -> None:
+        """
+        Choose whether to hide or show private bookmarks and tags. A tag is
+        considered private if it has no member bookmarks which are not private.
+        """
         self.showPrivates = not self.showPrivates
         self.doUpdateForSearch()
+        self.resetTagList()
 
     def onAddBookmarkFromClipboard(self) -> None:
         "Create a new bookmark from the URL on the clipboard."
@@ -279,7 +284,7 @@ class MainWindow(QMainWindow):
         Update the tag list widget to match the current state of the db.
         """
         # Get updated tag list.
-        self.tags = tag_ops.scan_tags(self.session)
+        self.tags = tag_ops.scan_tags(self.session, self.showPrivates)
 
         # Remove tags that no longer exist.
         toRemove = [self.form.tagList.item(i)

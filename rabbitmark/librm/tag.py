@@ -94,8 +94,15 @@ def rename_tag(session, current_name: str, new_name: str) -> bool:
     return True
 
 
-def scan_tags(session) -> Sequence[str]:
-    "Get a list of the names of all existing tags, plus the NOTAGS placeholder."
-    tag_list = [str(i) for i in session.query(Tag).all()]
+def scan_tags(session, show_private: bool) -> Sequence[str]:
+    """
+    Get a list of the names of all existing tags, plus the NOTAGS placeholder.
+    Don't show private tags if told we are hiding private tags.
+    """
+    q = session.query(Tag)
+    if not show_private:
+        # pylint: disable=singleton-comparison
+        q = q.filter(Tag.bookmarks.any(Bookmark.private == False))
+    tag_list = [str(i) for i in q.all()]
     tag_list.append(NOTAGS)
     return tag_list
