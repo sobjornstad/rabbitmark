@@ -328,7 +328,7 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
             if mark is None:
                 return # nothing is selected
-            if bookmark.save_if_edited(self.session, mark, self.mRepr()):
+            if bookmark.save_if_edited(self.session, mark, utils.mark_dictionary(sfdw)):
                 self.session.commit()  # pylint: disable=no-member
                 self.resetTagList()
             self.doUpdateForSearch()
@@ -417,22 +417,6 @@ class MainWindow(QMainWindow):
                 assert False, "Invalid argument to tagsSelect!"
         self.form.tagList.blockSignals(oldSigs)
         self.form.tagList.itemSelectionChanged.emit()
-
-    def mRepr(self) -> Dict[str, Any]:
-        """
-        Short for "mark representation": return a dictionary of the content
-        currently in the fields so that the model can compare and/or save it.
-        """
-        sfdw = self.detailsForm
-        return {
-            'name': str(sfdw.nameBox.text()),
-            'url': str(sfdw.urlBox.text()),
-            'description': str(sfdw.descriptionBox.toPlainText()),
-            'private': sfdw.privateCheck.isChecked(),
-            'tags': [i.strip() for i in
-                     str(sfdw.tagsBox.text()).split(',')
-                     if i.strip() != ''],
-        }
 
     def updateTitleCount(self, count) -> None:
         """

@@ -5,7 +5,7 @@ utils.py - Qt GUI and other utility functions
 """
 
 from enum import Enum, unique
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
 # Yet again, pylint can't seem to read PyQt5's module structure properly...
 # pylint: disable=no-name-in-module
@@ -83,3 +83,19 @@ def inputBox(label, title=None, defaultText=None) -> Tuple[str, bool]:
     else:
         ret = QInputDialog.getText(None, title, label)
     return str(ret[0]), ret[1]
+
+
+def mark_dictionary(detailsForm) -> Dict[str, Any]:
+    """
+    Given a details form object, return a dictionary of its content
+    in the format needed by bookmark.save_if_edited().
+    """
+    return {
+        'name': str(detailsForm.nameBox.text()),
+        'url': str(detailsForm.urlBox.text()),
+        'description': str(detailsForm.descriptionBox.toPlainText()),
+        'private': detailsForm.privateCheck.isChecked(),
+        'tags': [i.strip() for i in
+                    str(detailsForm.tagsBox.text()).split(',')
+                    if i.strip() != ''],
+    }
