@@ -46,6 +46,9 @@ class MainWindow(QMainWindow):
         sf.actionNew.triggered.connect(self.onAddBookmark)
         sf.actionNew_from_clipboard.triggered.connect(
             self.onAddBookmarkFromClipboard)
+        sf.actionCopyUrl.triggered.connect(self.copyUrl)
+        sf.actionBrowseToUrl.triggered.connect(self.openUrl)
+
         sf.actionRenameTag.triggered.connect(self.onRenameTag)
         sf.actionDeleteTag.triggered.connect(self.onDeleteTag)
         sf.actionWayBack.triggered.connect(self.onWayBackMachine)
