@@ -42,9 +42,14 @@ class LinkCheckDialog(QDialog):
         self.form.closeButton.clicked.connect(self.accept)
         self.form.deleteButton.clicked.connect(self.onDeleteBookmark)
         self.form.wayBackMachineButton.clicked.connect(self.onWaybackBookmark)
+        self.form.dismissButton.clicked.connect(self.onDismissBookmark)
 
     def accept(self):
-        self.saveBookmark()
+        try:
+            self.saveBookmark()
+        except KeyError:
+            # last item was just removed
+            pass
         super().accept()
 
     def _blinkAndMark(self, widgetItem=None):
@@ -68,25 +73,34 @@ class LinkCheckDialog(QDialog):
         """
         sfdw = self.detailsForm
         if previous is not None:
-            _, prevMark = self._blinkAndMark(previous)
-            self.saveBookmark(prevMark)
+            try:
+                _, prevMark = self._blinkAndMark(previous)
+            except KeyError:
+                # item was just deleted
+                pass
+            else:
+                self.saveBookmark(prevMark)
 
-        blink_obj, mark = self._blinkAndMark(new)
-        sfdw.nameBox.setText(mark.name)
-        sfdw.urlBox.setText(mark.url)
-        sfdw.descriptionBox.setPlainText(mark.description)
-        sfdw.privateCheck.setChecked(mark.private)
-        tags = ', '.join([i.text for i in mark.tags])
-        sfdw.tagsBox.setText(tags)
-        # If a name or URL is too long to fit in the box, this will make
-        # the box show the beginning of it rather than the end.
-        for i in (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox):
-            i.setCursorPosition(0)
+        if new is not None:
+            blink_obj, mark = self._blinkAndMark(new)
+            sfdw.nameBox.setText(mark.name)
+            sfdw.urlBox.setText(mark.url)
+            sfdw.descriptionBox.setPlainText(mark.description)
+            sfdw.privateCheck.setChecked(mark.private)
+            tags = ', '.join([i.text for i in mark.tags])
+            sfdw.tagsBox.setText(tags)
+            # If a name or URL is too long to fit in the box, this will make
+            # the box show the beginning of it rather than the end.
+            for i in (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox):
+                i.setCursorPosition(0)
 
-        err_des = blink_obj.error_description
-        err_code = blink_obj.status_code
-        self.form.detailsBox.setText(err_des if err_des is not None else "")
-        self.form.statusCodeBox.setText(str(err_code) if err_code is not None else "")
+            err_des = blink_obj.error_description
+            err_code = blink_obj.status_code
+            self.form.detailsBox.setText(err_des if err_des is not None else "")
+            self.form.statusCodeBox.setText(str(err_code) if err_code is not None else "")
+        else:
+            # We've handled all the items. Close the dialog.
+            self.accept()
 
     def onDeleteBookmark(self):
         "Delete a broken link from the database."
@@ -112,3 +126,10 @@ class LinkCheckDialog(QDialog):
         if bookmark.save_if_edited(self.session, mark,
                                    utils.mark_dictionary(self.detailsForm)):
             self.session.commit()  # pylint: disable=no-member
+
+    def onDismissBookmark(self):
+        "Remove a bookmark from the list (when we're done dealing with it)."
+        self.saveBookmark()
+        _, mark = self._blinkAndMark()
+        del self.blinks[mark.name]
+        self.form.pageList.takeItem(self.form.pageList.currentRow())
