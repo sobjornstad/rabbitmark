@@ -30,11 +30,11 @@ class LinkCheck:
 
     def __str__(self) -> str:
         if self.successful:
-            return f"[ OK ] [200] {self.name} ({self.url})" 
+            return f"[ OK ] [200] {self.name} ({self.url})"
         elif self.status_code is not None:
-            return f"[FAIL] [{self.status_code}] {self.name} ({self.url})" 
+            return f"[FAIL] [{self.status_code}] {self.name} ({self.url})"
         else:
-            return f"[FAIL] [ERR] {self.error_description}: {self.name} ({self.url})" 
+            return f"[FAIL] [ERR] {self.error_description}: {self.name} ({self.url})"
 
 
 # pylint: disable=too-many-return-statements

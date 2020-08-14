@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session as SessionType
 
 from .bookmark_table import BookmarkTableModel
 from .forms.main import Ui_MainWindow
+from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .librm import broken_links
 from .librm import bookmark
 from .librm import tag as tag_ops
@@ -62,8 +63,7 @@ class MainWindow(QMainWindow):
         sf.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         sf.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
         sf.tagsInvertButton.clicked.connect(lambda: self.tagsSelect('invert'))
-        sf.copyUrlButton.clicked.connect(self.copyUrl)
-        sf.browseUrlButton.clicked.connect(self.openUrl)
+
         findShortcut = QShortcut(QKeySequence("Ctrl+F"), sf.searchBox)
         findShortcut.activated.connect(sf.searchBox.setFocus)
 
@@ -86,6 +86,13 @@ class MainWindow(QMainWindow):
             self.form.tagList.addItem(i)
         self.form.tagList.sortItems()
 
+        # set up details form
+        self.detailsForm = BookmarkDetailsWidget()
+        self.detailsForm.setupUi(self.form.detailsWidget)
+        self.detailsForm.copyUrlButton.clicked.connect(self.copyUrl)
+        self.detailsForm.browseUrlButton.clicked.connect(self.openUrl)
+
+
         # set up re-search triggers and update for the first time
         self.form.searchBox.textChanged.connect(self.doUpdateForSearch)
         self.form.tagList.itemSelectionChanged.connect(self.doUpdateForSearch)
@@ -103,7 +110,8 @@ class MainWindow(QMainWindow):
         "Clean up and quit RabbitMark."
         # fake changing focus: the widget name for new is arbitrary,
         # one of the editable boxes is required for old
-        self.maybeSaveBookmark(old=self.form.nameBox, new=self.form.nameBox)
+        self.maybeSaveBookmark(old=self.detailsForm.nameBox,
+                               new=self.detailsForm.nameBox)
         # false positive
         # pylint: disable=no-member
         self.session.commit()
@@ -155,7 +163,7 @@ class MainWindow(QMainWindow):
         index = self.tableModel.indexFromPk(newBookmark.id)
         if index is not None:
             self.tableView.setCurrentIndex(index)
-            self.form.nameBox.setFocus()
+            self.detailsForm.nameBox.setFocus()
 
     def deleteCurrent(self) -> None:
         "Delete the selected bookmark."
@@ -175,9 +183,9 @@ class MainWindow(QMainWindow):
         self.tableView.setCurrentIndex(nextRow)
 
     def copyUrl(self) -> None:
-        QApplication.clipboard().setText(self.form.urlBox.text())
+        QApplication.clipboard().setText(self.detailsForm.urlBox.text())
     def openUrl(self) -> None:
-        QDesktopServices.openUrl(QUrl(self.form.urlBox.text()))
+        QDesktopServices.openUrl(QUrl(self.form.detailsForm.urlBox.text()))
 
     def onWayBackMachine(self) -> None:
         "Find a snapshot of the item's URL in the WayBackMachine."
@@ -198,7 +206,7 @@ class MainWindow(QMainWindow):
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         archiveUrl = wayback_search_dialog.way_back_from_url(self, url)
         if archiveUrl is not None:
-            self.form.urlBox.setText(archiveUrl)
+            self.detailsForm.urlBox.setText(archiveUrl)
 
     def onRenameTag(self) -> None:
         "Rename the selected tag."
@@ -322,9 +330,9 @@ class MainWindow(QMainWindow):
         This method is called by the signal set in startQt() when any focus
         changes, as well as before quitting.
         """
-        sf = self.form
-        if old in (sf.nameBox, sf.urlBox, sf.descriptionBox, sf.tagsBox,
-                   sf.privateCheck):
+        sfdw = self.detailsForm
+        if old in (sfdw.nameBox, sfdw.urlBox, sfdw.descriptionBox, sfdw.tagsBox,
+                   sfdw.privateCheck):
             mark = self.tableModel.getObj(self.tableView.currentIndex())
             QApplication.processEvents()
             if mark is None:
@@ -383,21 +391,22 @@ class MainWindow(QMainWindow):
 
     def fillEditPane(self) -> None:
         "Fill the editor/details pane with data from the currently selected bookmark."
+        sfdw = self.detailsForm
         mark = self.tableModel.getObj(self.tableView.currentIndex())
         if not self.sm.selectedRows():
             # nothing selected; hide editor pane
             self.form.splitter.widget(1).setVisible(False)
         else:
             self.form.splitter.widget(1).setVisible(True)
-            self.form.nameBox.setText(mark.name)
-            self.form.urlBox.setText(mark.url)
-            self.form.descriptionBox.setPlainText(mark.description)
-            self.form.privateCheck.setChecked(mark.private)
+            sfdw.nameBox.setText(mark.name)
+            sfdw.urlBox.setText(mark.url)
+            sfdw.descriptionBox.setPlainText(mark.description)
+            sfdw.privateCheck.setChecked(mark.private)
             tags = ', '.join([i.text for i in mark.tags])
-            self.form.tagsBox.setText(tags)
+            sfdw.tagsBox.setText(tags)
             # If a name or URL is too long to fit in the box, this will make
             # the box show the beginning of it rather than the end.
-            for i in (self.form.nameBox, self.form.urlBox, self.form.tagsBox):
+            for i in (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox):
                 i.setCursorPosition(0)
 
     def tagsSelect(self, what) -> None:
@@ -423,13 +432,14 @@ class MainWindow(QMainWindow):
         Short for "mark representation": return a dictionary of the content
         currently in the fields so that the model can compare and/or save it.
         """
+        sfdw = self.detailsForm
         return {
-            'name': str(self.form.nameBox.text()),
-            'url': str(self.form.urlBox.text()),
-            'description': str(self.form.descriptionBox.toPlainText()),
-            'private': self.form.privateCheck.isChecked(),
+            'name': str(sfdw.nameBox.text()),
+            'url': str(sfdw.urlBox.text()),
+            'description': str(sfdw.descriptionBox.toPlainText()),
+            'private': sfdw.privateCheck.isChecked(),
             'tags': [i.strip() for i in
-                     str(self.form.tagsBox.text()).split(',')
+                     str(sfdw.tagsBox.text()).split(',')
                      if i.strip() != ''],
         }
 
