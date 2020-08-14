@@ -387,7 +387,7 @@
      <string>Ta&amp;g</string>
     </property>
     <addaction name="actionRenameTag"/>
-    <addaction name="actionMerge_into"/>
+    <addaction name="actionMergeTag"/>
     <addaction name="actionDeleteTag"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
@@ -461,7 +461,7 @@
     <string>Ctrl+R</string>
    </property>
   </action>
-  <action name="actionMerge_into">
+  <action name="actionMergeTag">
    <property name="text">
     <string>&amp;Merge Into...</string>
    </property>

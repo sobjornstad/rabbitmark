@@ -51,6 +51,7 @@ class MainWindow(QMainWindow):
 
         sf.actionRenameTag.triggered.connect(self.onRenameTag)
         sf.actionDeleteTag.triggered.connect(self.onDeleteTag)
+        sf.actionMergeTag.triggered.connect(self.onMergeTag)
         sf.actionWayBack.triggered.connect(self.onWayBackMachine)
         sf.actionShowPrivate.triggered.connect(self.onTogglePrivate)
         self.showPrivates = False
@@ -197,11 +198,13 @@ class MainWindow(QMainWindow):
                                          "Rename tag", tag)
         if doContinue:
             if tag_ops.rename_tag(self.session, tag, new):
+                self.session.commit()  # pylint: disable=no-member
                 self.resetTagList()
                 self.fillEditPane()
             else:
                 utils.errorBox("A tag by that name already exists.",
                                "Cannot rename tag")
+        self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
 
     def onDeleteTag(self) -> None:
         "Delete the selected tag."
@@ -230,8 +233,32 @@ class MainWindow(QMainWindow):
                               "to continue?" % tag, "Delete tag?")
         if r == QMessageBox.Yes:
             tag_ops.delete_tag(self.session, tag)
+            self.session.commit()  # pylint: disable=no-member
             self.resetTagList()
             self.fillEditPane()
+
+    def onMergeTag(self) -> None:
+        "Merge the selected tag into another."
+        tags = [str(i.text())
+                for i in self.form.tagList.selectedItems()]
+
+        if len(tags) < 1:
+            utils.errorBox("Please select a tag to rename.",
+                           "No tag selected")
+            return
+        elif len(tags) > 1:
+            utils.errorBox("Tags cannot be renamed in bulk. Please select"
+                           "exactly one tag.", "Cannot rename multiple tags")
+            return
+
+        tag = tags[0]
+        new, doContinue = utils.inputBox(f"Merge tag {tag} into:", "Merge tag")
+        if doContinue:
+            if tag_ops.merge_tags(self.session, tag, new):
+                self.session.commit()  # pylint: disable=no-member
+                self.resetTagList()
+                self.fillEditPane()
+            self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
 
     def resetTagList(self) -> None:
         """
@@ -276,8 +303,8 @@ class MainWindow(QMainWindow):
             if mark is None:
                 return # nothing is selected
             if bookmark.save_if_edited(self.session, mark, self.mRepr()):
-                self.resetTagList()
                 self.session.commit()  # pylint: disable=no-member
+                self.resetTagList()
             self.doUpdateForSearch()
 
     def doUpdateForSearch(self) -> None:

@@ -36,7 +36,6 @@ def delete_tag(session, tag_name: str) -> None:
     """
     tag_obj = session.query(Tag).filter(Tag.text == tag_name).one()
     session.delete(tag_obj)
-    session.commit()
 
 
 def maybe_expunge_tag(session, tag: Tag) -> bool:
@@ -55,6 +54,28 @@ def maybe_expunge_tag(session, tag: Tag) -> bool:
         return False
 
 
+def merge_tags(session, from_name: str, into_name: str) -> bool:
+    """
+    Merge the tag from_name into to_name. If the target already exists,
+    DWIM and do a rename instead.
+    """
+    from_tag = session.query(Tag).filter(Tag.text == from_name).one()
+    to_tag = session.query(Tag).filter(Tag.text == into_name).one_or_none()
+
+    if to_tag is None:
+        return rename_tag(session, from_name, into_name)
+
+    bquery = session.query(Bookmark)
+    needs_retag = bquery.filter(Bookmark.tags.any(Tag.text == from_name)).all()
+    for mark in needs_retag:
+        mark.tags.remove(from_tag)
+        mark.tags.append(to_tag)
+
+    session.delete(from_tag)
+    session.flush()
+    return True
+
+
 def rename_tag(session, current_name: str, new_name: str) -> bool:
     """
     Rename tag /tag/ to /new/.
@@ -70,7 +91,6 @@ def rename_tag(session, current_name: str, new_name: str) -> bool:
 
     tag_obj = session.query(Tag).filter(Tag.text == current_name).one()
     tag_obj.text = new_name
-    session.commit()
     return True
 
 
