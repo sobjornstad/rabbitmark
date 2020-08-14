@@ -122,7 +122,8 @@ class MainWindow(QMainWindow):
         "Common portion of creating a new bookmark."
         # Create the new item with any tags that are selected.
         tags = [str(i.text())
-                for i in self.form.tagList.selectedItems()]
+                for i in self.form.tagList.selectedItems()
+                if str(i.text()) != utils.NOTAGS]
 
         # Full-text filter is automatically cleared on add -- otherwise, the new
         # item won't # be visible! (In fact, RabbitMark actually ends up crashing.)
