@@ -305,6 +305,10 @@ class MainWindow(QMainWindow):
         broken_links.scan(self.session, callback, only_failures=True)
         dlg = link_check_dialog.LinkCheckDialog(self, blinks, self.session)
         dlg.exec_()
+        
+        # Since we could have edited things within the dialog, we need to resync.
+        self.doUpdateForSearch()
+        self.resetTagList()
 
     def maybeSaveBookmark(self, old, new) -> None:
         """

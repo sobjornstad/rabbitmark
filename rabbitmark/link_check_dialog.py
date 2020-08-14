@@ -36,29 +36,42 @@ class LinkCheckDialog(QDialog):
 
         self.form.pageList.addItems(sorted(self.blinks.keys()))
         self.form.pageList.item(0).setSelected(True)
-        self.form.pageList.itemSelectionChanged.connect(self.updateDetailsPane)
-        self.updateDetailsPane()
+        self.form.pageList.currentItemChanged.connect(self.updateDetailsPane)
 
         # link up buttons
         self.form.closeButton.clicked.connect(self.accept)
         self.form.deleteButton.clicked.connect(self.onDeleteBookmark)
         self.form.wayBackMachineButton.clicked.connect(self.onWaybackBookmark)
 
-    def _selectedBlinkAndMark(self):
-        "Return the link and bookmark objects for the selected item."
-        blink_obj = self.blinks[self.form.pageList.selectedItems()[0].text()]
+    def accept(self):
+        self.saveBookmark()
+        super().accept()
+
+    def _blinkAndMark(self, widgetItem=None):
+        """
+        Return the link and bookmark objects for the specified list widget
+        item, or the currently selected one if not specified.
+        """
+        if widgetItem is None:
+            widgetItem = self.form.pageList.selectedItems()[0]
+
+        blink_obj = self.blinks[widgetItem.text()]
         mark = bookmark.get_bookmark_by_id(self.session, blink_obj.pk)
         return blink_obj, mark
 
-
-    def updateDetailsPane(self):
+    def updateDetailsPane(self, new, previous):
         """
         Fill the editor/details pane with data from the currently selected bookmark.
+
+        If /initial/, this is our first selection and we should thus skip saving
+        before updating (otherwise we'd just blank out the first item in the list).
         """
         sfdw = self.detailsForm
-        blink_obj, mark = self._selectedBlinkAndMark()
+        if previous is not None:
+            _, prevMark = self._blinkAndMark(previous)
+            self.saveBookmark(prevMark)
 
-        #TODO: Refactor so this isn't a copy of the one in main
+        blink_obj, mark = self._blinkAndMark(new)
         sfdw.nameBox.setText(mark.name)
         sfdw.urlBox.setText(mark.url)
         sfdw.descriptionBox.setPlainText(mark.description)
@@ -77,7 +90,7 @@ class LinkCheckDialog(QDialog):
 
     def onDeleteBookmark(self):
         "Delete a broken link from the database."
-        blink_obj, mark = self._selectedBlinkAndMark()
+        _, mark = self._blinkAndMark()
         del self.blinks[mark.name]
         self.form.pageList.takeItem(self.form.pageList.currentRow())
         bookmark.delete_bookmark(self.session, mark)
@@ -85,8 +98,17 @@ class LinkCheckDialog(QDialog):
 
     def onWaybackBookmark(self):
         "Replace the bookmark's URL with a WayBackMachine version."
-        blink_obj, mark = self._selectedBlinkAndMark()
+        _, mark = self._blinkAndMark()
         new_url = wayback_search_dialog.init_wayback_search(self, mark.url)
         if new_url is not None:
             # TODO: Need to set the actual bookmark -- figure out how to save
             self.detailsForm.urlBox.setText(new_url)
+            self.detailsForm.urlBox.setFocus()
+
+    def saveBookmark(self, mark=None):
+        "Save the specified bookmark, or the currently selected one if not specified."
+        if mark is None:
+            _, mark = self._blinkAndMark()
+        if bookmark.save_if_edited(self.session, mark,
+                                   utils.mark_dictionary(self.detailsForm)):
+            self.session.commit()  # pylint: disable=no-member
