@@ -7,6 +7,7 @@ main.py -- RabbitMark Qt application
 # All rights reserved (temporary; if you read this and want such, contact me
 # for relicensing under some FOSS license).
 
+import re
 import sys
 from typing import Any, Dict, NoReturn
 
@@ -173,9 +174,22 @@ class MainWindow(QMainWindow):
 
     def onWayBackMachine(self) -> None:
         "Find a snapshot of the item's URL in the WayBackMachine."
-        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         mark = self.tableModel.getObj(self.tableView.currentIndex())
-        archiveUrl = wayback_search_dialog.way_back_from_url(self, mark.url)
+
+        if re.match("https?://web.archive.org/", mark.url):
+            if utils.questionBox(
+                    "This bookmark appears to already be pointing at a snapshot in "
+                    "the WayBackMachine. Would you like to pick a new snapshot?",
+                    "Select new snapshot?") == QMessageBox.Yes:
+                url = re.sub("https?://web.archive.org/web/[0-9]+/(.*)", r"\1",
+                             mark.url)
+            else:
+                return
+        else:
+            url = mark.url
+
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+        archiveUrl = wayback_search_dialog.way_back_from_url(self, url)
         if archiveUrl is not None:
             self.form.urlBox.setText(archiveUrl)
 
