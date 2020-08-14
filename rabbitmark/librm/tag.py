@@ -17,6 +17,22 @@ def delete_tag(session, tag_name: str) -> None:
     session.commit()
 
 
+def maybe_expunge_tag(session, tag: Tag) -> bool:
+    """
+    Delete /tag/ from the tags table if it is no longer referenced by
+    any bookmarks.
+
+    Return:
+        True if the tag was deleted.
+        False if the tag is still referenced and was not deleted.
+    """
+    if not tag.bookmarks:
+        session.delete(tag)
+        return True
+    else:
+        return False
+
+
 def rename_tag(session, current_name: str, new_name: str) -> Tag:
     """
     Rename tag /tag/ to /new/.

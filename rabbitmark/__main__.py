@@ -384,6 +384,7 @@ class MainWindow(QMainWindow):
                 return # nothing is selected
             if bookmark.save_if_edited(self.session, mark, self.mRepr()):
                 self.resetTagList()
+                self.session.commit()
             self.doUpdateForSearch()
 
     def doUpdateForSearch(self):
@@ -477,14 +478,14 @@ class MainWindow(QMainWindow):
         currently in the fields so that the model can compare and/or save it.
         """
         return {
-            'name':  str(self.form.nameBox.text()),
-            'url':   str(self.form.urlBox.text()),
-            'descr': str(self.form.descriptionBox.toPlainText()),
-            'priv':  self.form.privateCheck.isChecked(),
-            'tags':  [i.strip() for i in
-                      str(self.form.tagsBox.text()).split(',')
-                      if i.strip() != ''],
-            }
+            'name': str(self.form.nameBox.text()),
+            'url': str(self.form.urlBox.text()),
+            'description': str(self.form.descriptionBox.toPlainText()),
+            'private': self.form.privateCheck.isChecked(),
+            'tags': [i.strip() for i in
+                     str(self.form.tagsBox.text()).split(',')
+                     if i.strip() != ''],
+        }
 
     def updateTitleCount(self, count):
         """

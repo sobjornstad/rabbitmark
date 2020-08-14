@@ -2,12 +2,13 @@
 bookmark.py -- RabbitMark bookmark operations
 """
 
-from typing import Iterable, Sequence
+from typing import Any, Dict, Iterable, Sequence
 
 from sqlalchemy import or_
 
 from ..utils import NOTAGS, SearchMode
 from .models import Bookmark, Tag
+from .tag import maybe_expunge_tag
 
 
 def add_bookmark(session, url: str, tags: Iterable[str]) -> Bookmark:
@@ -51,59 +52,53 @@ def delete_bookmark(session, bookmark: Bookmark) -> None:
         maybe_expunge_tag(session, tag)
 
 
-def maybe_expunge_tag(session, tag: Tag) -> bool:
+def save_if_edited(session, existing_bookmark: Bookmark,
+                   new_content: Dict[str, Any]) -> bool:
     """
-    Delete /tag/ from the tags table if it is no longer referenced by
-    any bookmarks.
+    If the new content differs from that currently in the bookmark,
+    update the bookmark to match.
 
     Return:
-        True if the tag was deleted.
-        False if the tag is still referenced and was not deleted.
+        True if an update was made, False if not.
+    
+    State change:
+        The bookmark is updated on the database. The changes are not committed.
     """
-    if not tag.bookmarks:
-        session.delete(tag)
-        return True
-    else:
+    def _dirty():
+        for i in ('name', 'description', 'url', 'private'):
+            if getattr(existing_bookmark, i) != new_content[i]:
+                return True
+        if [i.text for i in existing_bookmark.tags] != new_content['tags']:
+            return True
         return False
-
-
-def save_if_edited(session, mark, content):
-    """
-    If the content in 'content' differs from the data in the db obj
-    'mark', update 'mark' to match the contents of 'content'.
-
-    Returns True if an update was made, False if not.
-    """
-    if not (mark.name == content['name'] and
-            mark.description == content['descr'] and
-            mark.url == content['url'] and
-            mark.private == content['priv'] and
-            [i.text for i in mark.tags] == content['tags']):
-        mark.name = content['name']
-        mark.description = content['descr']
-        mark.url = content['url']
-        mark.private = content['priv']
+    
+    if _dirty():
+        existing_bookmark.name = new_content['name']
+        existing_bookmark.description = new_content['description']
+        existing_bookmark.url = new_content['url']
+        existing_bookmark.private = new_content['private']
 
         # add new tags
-        new_tags = content['tags']
+        new_tags = new_content['tags']
         for tag in new_tags:
             existing_tag = session.query(Tag).filter(Tag.text == tag).first()
             if existing_tag:
                 session.merge(existing_tag)
-                mark.tags.append(existing_tag)
+                existing_bookmark.tags.append(existing_tag)
             else:
                 new_tag = Tag(text=tag)
                 session.add(new_tag)
-                mark.tags.append(new_tag)
+                existing_bookmark.tags.append(new_tag)
 
         # remove tags that are no longer used
-        for tag in mark.tags:
+        for tag in existing_bookmark.tags:
             if tag.text not in new_tags:
-                mark.tags.remove(tag)
+                existing_bookmark.tags.remove(tag)
                 maybe_expunge_tag(session, tag)
-        session.commit()
+
         return True
-    return False
+    else:
+        return False
 
 
 # pylint: disable=singleton-comparison
