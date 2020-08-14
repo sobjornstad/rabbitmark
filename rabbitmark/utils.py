@@ -1,16 +1,15 @@
-# This file is part of RabbitMark.
-# Copyright 2015, 2019 Soren Bjornstad. All rights reserved.
-
 """
 utils.py - Qt GUI and other utility functions
 
 (These should be split up in another refactor round in the future.)
 """
 
+from enum import Enum, unique
+from typing import Tuple
+
 # Yet again, pylint can't seem to read PyQt5's module structure properly...
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
-from enum import Enum, unique
 
 NOTAGS = "(no tags)"
 DATE_FORMAT = '%Y-%m-%d'
@@ -20,7 +19,7 @@ class SearchMode(Enum):
     Or = 0
     And = 1
 
-def informationBox(text, title=None):
+def informationBox(text, title=None) -> None:
     """
     Message box with the information icon and an OK button.
     """
@@ -31,7 +30,7 @@ def informationBox(text, title=None):
         msgBox.setWindowTitle(title)
     msgBox.exec_()
 
-def errorBox(text, title=None):
+def errorBox(text, title=None) -> None:
     """
     Message box with the error icon and an OK button.
     """
@@ -42,7 +41,7 @@ def errorBox(text, title=None):
         msgBox.setWindowTitle(title)
     msgBox.exec_()
 
-def warningBox(text, title=None):
+def warningBox(text, title=None) -> None:
     """
     Message box with the warning icon and an OK button.
     """
@@ -71,7 +70,7 @@ def questionBox(text, title=None):
     return msgBox.exec_()
 
 
-def inputBox(label, title=None, defaultText=None):
+def inputBox(label, title=None, defaultText=None) -> Tuple[str, bool]:
     """
     Basic input box. Returns a tuple:
         [0] The text entered, as a Unicode string.

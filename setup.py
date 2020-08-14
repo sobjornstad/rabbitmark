@@ -4,6 +4,7 @@ setup.py -  setuptools configuration for esc
 
 import setuptools
 
+# pylint: disable=invalid-name
 long_description = "my des"
 #with open("README.md", "r") as fh:
 #    long_description = fh.read()

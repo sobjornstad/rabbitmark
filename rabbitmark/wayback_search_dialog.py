@@ -2,8 +2,7 @@
 wayback_search_dialog.py -- interface for searching the WayBackMachine
 """
 
-import datetime
-import requests
+from typing import Optional
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication, QDialog
@@ -35,7 +34,7 @@ class WayBackDialog(QDialog):
         "How do you want to proceed?")
     snapshot_label_template = "The following snapshot is from %s:"
 
-    def __init__(self, parent, snapshots):
+    def __init__(self, parent, snapshots) -> None:
         """
         Set up the dialog as usual.
 
@@ -60,7 +59,7 @@ class WayBackDialog(QDialog):
         self._checkAllowableActions()
         self._updateDialogText()
 
-    def reject(self):
+    def reject(self) -> None:
         """
         0 is a possible return value on accept, meaning to use the first
         snapshot in the list, so we have to redefine reject()'s traditional
@@ -68,7 +67,7 @@ class WayBackDialog(QDialog):
         """
         QDialog.done(self, -1)
 
-    def _checkAllowableActions(self):
+    def _checkAllowableActions(self) -> None:
         """
         Determine which search actions make sense to allow with the current
         state of the search and disable those that don't.
@@ -80,7 +79,7 @@ class WayBackDialog(QDialog):
         sf.backupRadio.setEnabled(self.bs.can_backtrack)
         sf.useRadio.setChecked(True)
 
-    def _updateDialogText(self):
+    def _updateDialogText(self) -> None:
         """
         Update the dialog box to show the user appropriate details about the
         state of the search.
@@ -109,15 +108,15 @@ class WayBackDialog(QDialog):
         self.form.urlBox.setText(current_item.archived_url)
         self.form.urlBox.setCursorPosition(0)
 
-    def onBrowseTo(self):
+    def onBrowseTo(self) -> None:
         "Browse to shown URL -- same as in MainWindow."
         QDesktopServices.openUrl(QUrl(self.form.urlBox.text()))
 
-    def onCopy(self):
+    def onCopy(self) -> None:
         "Copy URL to clipboard -- same as in MainWindow."
         QApplication.clipboard().setText(self.form.urlBox.text())
 
-    def onContinue(self):
+    def onContinue(self) -> None:
         """
         Runs when "OK" is clicked. If "use" or "cancel" is selected, the dialog
         is accepted or rejected as appropriate; if another option is selected,
@@ -141,7 +140,7 @@ class WayBackDialog(QDialog):
         self._updateDialogText()
 
 
-def way_back_from_url(parent, original_url: str):
+def way_back_from_url(parent, original_url: str) -> Optional[str]:
     """
     Find a URL from the WayBackMachine that can replace the current URL
     (presumably if the formerly working URL has stopped working, or perhaps
@@ -164,14 +163,14 @@ def way_back_from_url(parent, original_url: str):
     if not snapshots:
         utils.informationBox("Sorry, the WayBackMachine does not have "
                              "this page archived.", "Page not found")
-        return
+        return None
 
     dlg = WayBackDialog(parent, snapshots)
     snapshotIndex = dlg.exec_()
     if snapshotIndex == -1:
         return None
     else:
-        return archived[snapshotIndex][2]
+        return snapshots[snapshotIndex].archived_url
 
 
 def _stepsAfter(steps: int) -> str:

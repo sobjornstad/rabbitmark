@@ -1,5 +1,8 @@
+"""
+binary_search.py - helper code for binary search algorithm
+"""
 from math import ceil, log2
-from typing import Optional, Tuple
+from typing import List, Tuple
 
 
 class BisectionState:
@@ -32,7 +35,7 @@ class BisectionState:
                        finding a working version of something, where the most recent
                        is unusually likely to be the goal.
     """
-    def __init__(self, num_items: int, start_at_end: bool = False):
+    def __init__(self, num_items: int, start_at_end: bool = False) -> None:
         assert num_items > 0, "Must have at least one item to bisect."
 
         self.num_items = num_items  #: total number of items in the bisection set
@@ -42,7 +45,8 @@ class BisectionState:
             self.index = self.upper #: current pivot point
         else:
             self.index = num_items // 2
-        self.stack = []             #: history of past values of 3 variables above
+        #: history of past values of 3 variables above
+        self.stack: List[Tuple[int, int, int]] = []
 
     ### State checks ###
     @property
@@ -67,7 +71,7 @@ class BisectionState:
         in the search window.
         """
         return self.index < self.upper
-    
+
     @property
     def can_go_before(self) -> bool:
         """
@@ -103,7 +107,7 @@ class BisectionState:
 
 
     ### Bisection steps ###
-    def mark_after(self):
+    def mark_after(self) -> None:
         "Indicate the desired item is after this one."
         assert self.can_go_after, "Invalid bisection step! Already at end."
         self.stack.append(self._memento())
@@ -111,7 +115,7 @@ class BisectionState:
         increase_by = (self.upper - self.index + 1) // 2
         self.index = self.index + increase_by
 
-    def mark_before(self):
+    def mark_before(self) -> None:
         "Indicate the desired item is before this one."
         assert self.can_go_before, "Invalid bisection step! Already at beginning."
         self.stack.append(self._memento())
@@ -119,7 +123,7 @@ class BisectionState:
         decrease_by = (self.index - self.lower + 1) // 2
         self.index = self.index - decrease_by
 
-    def backtrack(self):
+    def backtrack(self) -> None:
         "Back up to the previous choice point."
         assert self.can_backtrack, "Invalid bisection step! No steps to back out."
         self._restore(self.stack.pop())

@@ -1,7 +1,14 @@
+"""
+bookmark_table - model for a table showing all (or filtered) bookmarks
+"""
+
 from enum import Enum, unique
+from typing import Any, Callable, Optional, List
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt, QAbstractTableModel, pyqtSignal
+
+from .librm.bookmark import Bookmark
 
 class BookmarkTableModel(QAbstractTableModel):
     """
@@ -21,7 +28,7 @@ class BookmarkTableModel(QAbstractTableModel):
         Name = 0
         Tags = 1
 
-        def __str__(self):
+        def __str__(self) -> str:  # pylint: disable=invalid-str-returned
             return self.name
 
         def data(self, bookmark):
@@ -29,6 +36,8 @@ class BookmarkTableModel(QAbstractTableModel):
             Given a Bookmark object,
             return the data from it that this column should contain.
             """
+            # false positive
+            # pylint: disable=comparison-with-callable
             if self.name == 'Name':
                 return bookmark.name
             elif self.name == 'Tags':
@@ -37,8 +46,10 @@ class BookmarkTableModel(QAbstractTableModel):
                                  % self.value)
 
         #pylint: disable=superfluous-parens
-        def sort_function(self):
+        def sort_function(self) -> Callable[[Bookmark], Any]:
             "Return a key function that will sort this column correctly."
+            # false positive
+            # pylint: disable=comparison-with-callable
             if self.name == 'Name':
                 return (lambda i: i.name)
             elif self.name == 'Tags':
@@ -50,22 +61,22 @@ class BookmarkTableModel(QAbstractTableModel):
                     % self.value)
 
 
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:
         QAbstractTableModel.__init__(self)
         self.parent = parent
         self.headerdata = ("Name", "Tags")
-        self.L = []
+        self.L: List[Bookmark] = []  # pylint: disable=invalid-name
 
     ### Standard reimplemented methods ###
-    def rowCount(self, parent): #pylint: disable=no-self-use,unused-argument
+    def rowCount(self, parent) -> int: #pylint: disable=no-self-use,unused-argument
         return len(self.L)
-    def columnCount(self, parent): #pylint: disable=no-self-use,unused-argument
+    def columnCount(self, parent) -> int: #pylint: disable=no-self-use,unused-argument
         return len(self.headerdata)
 
-    def flags(self, index): #pylint: disable=no-self-use,unused-argument
+    def flags(self, index) -> Any: #pylint: disable=no-self-use,unused-argument
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
-    def headerData(self, col, orientation, role):
+    def headerData(self, col, orientation, role) -> Optional[str]:
         "Return headers for the model table."
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headerdata[col]
@@ -76,7 +87,7 @@ class BookmarkTableModel(QAbstractTableModel):
         "Return data for a given row and column."
         if not index.isValid():
             return None
-        if not (role == Qt.DisplayRole or role == Qt.EditRole):
+        if not role in (Qt.DisplayRole, Qt.EditRole):
             return None
 
         col = self.ModelColumn(index.column())
@@ -99,7 +110,11 @@ class BookmarkTableModel(QAbstractTableModel):
                 return self.index(row, 0)
         return None
 
-    def updateContents(self, marks):
+    def updateContents(self, marks) -> None:
+        """
+        Replace the current set of bookmarks held by the model with /marks/,
+        for instance when the filter is changed.
+        """
         self.beginResetModel()
         self.L = marks
         self.sort(0)
@@ -107,8 +122,11 @@ class BookmarkTableModel(QAbstractTableModel):
         self.endResetModel()
 
     def nextAfterDelete(self, index):
+        """
+        Return the index of the item that should be selected after deleting the
+        item at /index/.
+        """
         row = index.row()
-        mark = self.L[row]
         try:
             if (row - 1) >= 0:
                 nextObj = self.L[row-1]
@@ -122,7 +140,8 @@ class BookmarkTableModel(QAbstractTableModel):
 
     def updateAfterDelete(self, index) -> None:
         """
-        Call after deleting the bookmark at /row/ in the table.
+        Update the model to show that the item at /index/ has been deleted
+        from the database.
         """
         self.beginResetModel()
         del self.L[index.row()]

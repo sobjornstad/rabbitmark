@@ -8,28 +8,30 @@ main.py -- RabbitMark Qt application
 # for relicensing under some FOSS license).
 
 import sys
+from typing import Any, Dict, NoReturn
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication, QMainWindow, \
     QShortcut, QMessageBox
 from PyQt5.QtGui import QDesktopServices, QKeySequence, QCursor
-from PyQt5.QtCore import Qt, QAbstractTableModel, QUrl, pyqtSignal
+from PyQt5.QtCore import Qt, QUrl
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session as SessionType
 
 from .bookmark_table import BookmarkTableModel
 from .forms.main import Ui_MainWindow
 from .librm import bookmark
 from .librm import tag as tag_ops
-from .librm.models import Tag, Base
+from .librm.models import Base
 from . import utils
 from . import wayback_search_dialog
 
 
 class MainWindow(QMainWindow):
     "RabbitMark application window."
-    def __init__(self):
+    def __init__(self) -> None:
         QMainWindow.__init__(self)
         self.form = Ui_MainWindow()
         self.form.setupUi(self)
@@ -83,24 +85,26 @@ class MainWindow(QMainWindow):
         self.doUpdateForSearch()
 
     #pylint: disable=unused-argument
-    def closeEvent(self, evt):
+    def closeEvent(self, evt) -> NoReturn:
         "Catch click of the X button, etc., and properly quit."
         self.quit()
 
-    def quit(self):
+    def quit(self) -> NoReturn:
         "Clean up and quit RabbitMark."
         # fake changing focus: the widget name for new is arbitrary,
         # one of the editable boxes is required for old
         self.maybeSaveBookmark(old=self.form.nameBox, new=self.form.nameBox)
+        # false positive
+        # pylint: disable=no-member
         self.session.commit()
         self.session.close()
         sys.exit(0)
 
-    def onTogglePrivate(self):
+    def onTogglePrivate(self) -> None:
         self.showPrivates = not self.showPrivates
         self.doUpdateForSearch()
 
-    def onAddBookmarkFromClipboard(self):
+    def onAddBookmarkFromClipboard(self) -> None:
         "Create a new bookmark from the URL on the clipboard."
         pastedUrl = str(QApplication.clipboard().text()).strip()
         if '://' not in pastedUrl:
@@ -110,22 +114,23 @@ class MainWindow(QMainWindow):
             pastedUrl = 'http://' + pastedUrl
         self._newBookmark(pastedUrl)
 
-    def onAddBookmark(self):
+    def onAddBookmark(self) -> None:
         "Create a new bookmark without a given URL."
         self._newBookmark("http://")
 
-    def _newBookmark(self, url):
+    def _newBookmark(self, url) -> None:
+        "Common portion of creating a new bookmark."
         tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
         newBookmark = bookmark.add_bookmark(self.session, url, tags)
-        self.session.commit()
+        self.session.commit()  # pylint: disable=no-member
 
         self.doUpdateForSearch()
         index = self.tableModel.indexFromPk(newBookmark.id)
         self.tableView.setCurrentIndex(index)
         self.form.nameBox.setFocus()
 
-    def deleteCurrent(self):
+    def deleteCurrent(self) -> None:
         "Delete the selected bookmark."
         if not self.sm.hasSelection():
             utils.errorBox("Please select a bookmark to delete.",
@@ -136,25 +141,26 @@ class MainWindow(QMainWindow):
 
         mark = self.tableModel.getObj(curIndex)
         bookmark.delete_bookmark(self.session, mark)
-        self.session.commit()
+        self.session.commit()  # pylint: disable=no-member
 
         self.tableModel.updateAfterDelete(curIndex)
         self.resetTagList()
         self.tableView.setCurrentIndex(nextRow)
 
-    def copyUrl(self):
+    def copyUrl(self) -> None:
         QApplication.clipboard().setText(self.form.urlBox.text())
-    def openUrl(self):
+    def openUrl(self) -> None:
         QDesktopServices.openUrl(QUrl(self.form.urlBox.text()))
 
-    def onWayBackMachine(self):
+    def onWayBackMachine(self) -> None:
+        "Find a snapshot of the item's URL in the WayBackMachine."
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         mark = self.tableModel.getObj(self.tableView.currentIndex())
         archiveUrl = wayback_search_dialog.way_back_from_url(self, mark.url)
         if archiveUrl is not None:
             self.form.urlBox.setText(archiveUrl)
 
-    def onRenameTag(self):
+    def onRenameTag(self) -> None:
         "Rename the selected tag."
         tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
@@ -179,7 +185,7 @@ class MainWindow(QMainWindow):
                 utils.errorBox("A tag by that name already exists.",
                                "Cannot rename tag")
 
-    def onDeleteTag(self):
+    def onDeleteTag(self) -> None:
         "Delete the selected tag."
         tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
@@ -209,7 +215,7 @@ class MainWindow(QMainWindow):
             self.resetTagList()
             self.fillEditPane()
 
-    def resetTagList(self):
+    def resetTagList(self) -> None:
         """
         Update the tag list widget to match the current state of the db.
         """
@@ -229,7 +235,7 @@ class MainWindow(QMainWindow):
                 self.form.tagList.addItem(i)
         self.form.tagList.sortItems()
 
-    def maybeSaveBookmark(self, old, new):
+    def maybeSaveBookmark(self, old, new) -> None:
         """
         Update the state of the database object associated with the currently
         selected bookmark.
@@ -253,10 +259,10 @@ class MainWindow(QMainWindow):
                 return # nothing is selected
             if bookmark.save_if_edited(self.session, mark, self.mRepr()):
                 self.resetTagList()
-                self.session.commit()
+                self.session.commit()  # pylint: disable=no-member
             self.doUpdateForSearch()
 
-    def doUpdateForSearch(self):
+    def doUpdateForSearch(self) -> None:
         """
         Call tableModel.updateForSearch() to bring the contents of the
         bookmarks table into sync with the filter and tag selection.
@@ -283,7 +289,7 @@ class MainWindow(QMainWindow):
         self.reselectItem(oldId)
         self.updateTitleCount(self.tableModel.rowCount(self))
 
-    def reselectItem(self, item=None):
+    def reselectItem(self, item=None) -> None:
         """
         Select the given /item/ if it still exists in the view, or the first
         item in the view if it doesn't or /item/ is None.
@@ -305,7 +311,8 @@ class MainWindow(QMainWindow):
         self.tableView.setCurrentIndex(idx)
         self.fillEditPane()
 
-    def fillEditPane(self):
+    def fillEditPane(self) -> None:
+        "Fill the editor/details pane with data from the currently selected bookmark."
         mark = self.tableModel.getObj(self.tableView.currentIndex())
         if not self.sm.selectedRows():
             # nothing selected; hide editor pane
@@ -323,7 +330,7 @@ class MainWindow(QMainWindow):
             for i in (self.form.nameBox, self.form.urlBox, self.form.tagsBox):
                 i.setCursorPosition(0)
 
-    def tagsSelect(self, what):
+    def tagsSelect(self, what) -> None:
         "Select tags en masse using the convenience buttons at the bottom."
         # Block signals so that we only have to call itemSelectionChanged
         # once instead of numTags times -- this *greatly* improves performance.
@@ -341,7 +348,7 @@ class MainWindow(QMainWindow):
         self.form.tagList.blockSignals(oldSigs)
         self.form.tagList.itemSelectionChanged.emit()
 
-    def mRepr(self):
+    def mRepr(self) -> Dict[str, Any]:
         """
         Short for "mark representation": return a dictionary of the content
         currently in the fields so that the model can compare and/or save it.
@@ -356,7 +363,7 @@ class MainWindow(QMainWindow):
                      if i.strip() != ''],
         }
 
-    def updateTitleCount(self, count):
+    def updateTitleCount(self, count) -> None:
         """
         Change the count of matching items that appears in the title bar to
         /count/.
@@ -365,24 +372,25 @@ class MainWindow(QMainWindow):
             count, '' if count == 1 else 'es'))
 
 
-def make_Session():
+def make_Session() -> SessionType:
     "Create a SQLAlchemy Session object, from which sessions can be spawned."
     engine = create_engine('sqlite:///sorenmarks-test.db')
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine) # will not recreate existing tables/dbs
     return Session
 
+
 # http://stackoverflow.com/questions/9671490/
 # how-to-set-sqlite-pragma-statements-with-sqlalchemy
 #pylint: disable=unused-argument
 @event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
+def set_sqlite_pragma(dbapi_connection, connection_record) -> None:
     "Set SQLite pragma options for RabbitMark execution."
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.close()
 
-def startQt():
+def startQt() -> None:
     "Application entry point."
     app = QApplication(sys.argv)
     mw = MainWindow()

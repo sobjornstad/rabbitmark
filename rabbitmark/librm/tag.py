@@ -33,7 +33,7 @@ def maybe_expunge_tag(session, tag: Tag) -> bool:
         return False
 
 
-def rename_tag(session, current_name: str, new_name: str) -> Tag:
+def rename_tag(session, current_name: str, new_name: str) -> bool:
     """
     Rename tag /tag/ to /new/.
 
@@ -52,8 +52,8 @@ def rename_tag(session, current_name: str, new_name: str) -> Tag:
     return True
 
 
-def scan_tags(session) -> Sequence[Tag]:
-    "Get a list of all existing tags, plus the NOTAGS placeholder."
+def scan_tags(session) -> Sequence[str]:
+    "Get a list of the names of all existing tags, plus the NOTAGS placeholder."
     tag_list = [str(i) for i in session.query(Tag).all()]
     tag_list.append(NOTAGS)
     return tag_list

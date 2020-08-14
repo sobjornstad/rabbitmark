@@ -9,8 +9,7 @@ models.py - SQLAlchemy ORM database model for RabbitMark
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy import Integer, String, Boolean, \
-        Table, Column, ForeignKey, PrimaryKeyConstraint
+from sqlalchemy import Integer, String, Boolean, Table, Column, ForeignKey
 
 Base = declarative_base()
 mark_tag_assoc = Table(
@@ -20,7 +19,7 @@ mark_tag_assoc = Table(
     Column('tag_id', ForeignKey('tags.id'), primary_key=True))
 
 
-class Bookmark(Base):
+class Bookmark(Base):  # type: ignore
     "Entries for sites we want to keep track of."
     __tablename__ = 'bookmarks'
 
@@ -37,7 +36,7 @@ class Bookmark(Base):
         return "<Bookmark named %s>" % self.name
 
 
-class Tag(Base):
+class Tag(Base):  # type: ignore
     "Tags applied to bookmarks to organize them."
     __tablename__ = 'tags'
 
@@ -47,7 +46,7 @@ class Tag(Base):
                              secondary=mark_tag_assoc,
                              back_populates="tags")
 
-    def __str__(self):
+    def __str__(self):  # pylint: disable=invalid-str-returned
         return self.text
 
     def __repr__(self):

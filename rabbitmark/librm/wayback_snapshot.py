@@ -1,8 +1,11 @@
+"""
+wayback_snapshot.py - retrieve objects representing archive.org snapshots of a website
+"""
+
 import datetime
-import requests
 from typing import Sequence, Tuple
 
-from .binary_search import BisectionState
+import requests
 
 CDX_SEARCH_ENDPOINT = "http://web.archive.org/cdx/search/cdx"
 
@@ -24,18 +27,18 @@ class WaybackSnapshot:
                 f"path={self.page_path}>")
 
     @classmethod
-    def from_api_return(cls, original_url: str, data_row: Tuple):
+    def from_api_return(cls, original_url: str, data_row: Tuple) -> 'WaybackSnapshot':
         "Generate a Snapshot object from the return of the CDX API."
         timestamp, page_path = data_row[1:3]
         dt = datetime.datetime.strptime(timestamp, r'%Y%m%d%H%M%S')
         return cls(original_url, dt, page_path)
 
     @property
-    def archived_url(self):
+    def archived_url(self) -> str:
         "URL to view the contents of the snapshot on the web."
         return f"https://web.archive.org/web/{self.raw_timestamp}/{self.page_path}"
 
-    def formatted_timestamp(self, date_fmt: str):
+    def formatted_timestamp(self, date_fmt: str) -> str:
         "Timestamp of this snapshot, formatted using the provided date_fmt."
         return self.time.strftime(date_fmt)
 

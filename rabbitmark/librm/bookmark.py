@@ -60,7 +60,7 @@ def save_if_edited(session, existing_bookmark: Bookmark,
 
     Return:
         True if an update was made, False if not.
-    
+
     State change:
         The bookmark is updated on the database. The changes are not committed.
     """
@@ -71,7 +71,7 @@ def save_if_edited(session, existing_bookmark: Bookmark,
         if [i.text for i in existing_bookmark.tags] != new_content['tags']:
             return True
         return False
-    
+
     if _dirty():
         existing_bookmark.name = new_content['name']
         existing_bookmark.description = new_content['description']
