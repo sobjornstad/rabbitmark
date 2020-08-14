@@ -119,11 +119,14 @@
           </sizepolicy>
          </property>
          <property name="title">
-          <string>More actions</string>
+          <string>Actions</string>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <widget class="QPushButton" name="wayBackMachineButton">
+            <property name="toolTip">
+             <string>Try to find a WayBackMachine snapshot for this bookmark.</string>
+            </property>
             <property name="text">
              <string>Find in &amp;WayBackMachine</string>
             </property>
@@ -131,8 +134,21 @@
           </item>
           <item>
            <widget class="QPushButton" name="deleteButton">
+            <property name="toolTip">
+             <string>Delete this bookmark completely.</string>
+            </property>
             <property name="text">
              <string>&amp;Delete</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="dismissButton">
+            <property name="toolTip">
+             <string>Mark this item as checked and remove it from the list.</string>
+            </property>
+            <property name="text">
+             <string>Di&amp;smiss</string>
             </property>
            </widget>
           </item>
