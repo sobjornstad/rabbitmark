@@ -153,6 +153,15 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>nameBox</tabstop>
+  <tabstop>urlBox</tabstop>
+  <tabstop>copyUrlButton</tabstop>
+  <tabstop>browseUrlButton</tabstop>
+  <tabstop>tagsBox</tabstop>
+  <tabstop>descriptionBox</tabstop>
+  <tabstop>privateCheck</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

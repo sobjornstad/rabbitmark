@@ -22,7 +22,7 @@
      <property name="childrenCollapsible">
       <bool>false</bool>
      </property>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <widget class="QLabel" name="label_6">
@@ -36,7 +36,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
         <widget class="QGroupBox" name="groupBox_2">
@@ -197,10 +197,16 @@
     </widget>
    </item>
   </layout>
-  <zorder>layoutWidget</zorder>
-  <zorder>pageList</zorder>
-  <zorder>label_6</zorder>
  </widget>
+ <tabstops>
+  <tabstop>wayBackMachineButton</tabstop>
+  <tabstop>deleteButton</tabstop>
+  <tabstop>dismissButton</tabstop>
+  <tabstop>closeButton</tabstop>
+  <tabstop>pageList</tabstop>
+  <tabstop>statusCodeBox</tabstop>
+  <tabstop>detailsBox</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

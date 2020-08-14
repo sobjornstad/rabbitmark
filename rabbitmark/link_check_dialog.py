@@ -44,6 +44,15 @@ class LinkCheckDialog(QDialog):
         self.form.wayBackMachineButton.clicked.connect(self.onWaybackBookmark)
         self.form.dismissButton.clicked.connect(self.onDismissBookmark)
 
+        # Start cursor in page list. In order to get the tab order to work with the
+        # additional widget (which Designer doesn't let us set the tab order of
+        # within the main form), the last position in the main form's tab order
+        # must be the item immediately before where the widget should be positioned
+        # in the order. This works great, but means that without an explicit set
+        # focus, the cursor starts with the item just after the widget selected,
+        # which is a random action button.
+        self.form.pageList.setFocus()
+
     def accept(self):
         try:
             self.saveBookmark()
