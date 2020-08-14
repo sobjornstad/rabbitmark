@@ -238,7 +238,6 @@
     <addaction name="actionExport_CSV"/>
     <addaction name="separator"/>
     <addaction name="action_Quit"/>
-    <addaction name="actionBrokenLinks"/>
    </widget>
    <widget class="QMenu" name="menuBookmark">
     <property name="title">
@@ -265,14 +264,21 @@
     <property name="title">
      <string>&amp;Help</string>
     </property>
-    <addaction name="actionContens"/>
+    <addaction name="actionContents"/>
     <addaction name="actionReport_Bug"/>
     <addaction name="separator"/>
     <addaction name="actionAbout_RabbitMark"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>T&amp;ools</string>
+    </property>
+    <addaction name="actionBrokenLinks"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBookmark"/>
    <addaction name="menuTag"/>
+   <addaction name="menuTools"/>
    <addaction name="menu_Help"/>
   </widget>
   <action name="action_Quit">
@@ -390,7 +396,7 @@
     <string>Hide Private Items</string>
    </property>
   </action>
-  <action name="actionContens">
+  <action name="actionContents">
    <property name="text">
     <string>&amp;Contents</string>
    </property>
@@ -426,7 +432,7 @@
   </action>
   <action name="actionBrokenLinks">
    <property name="text">
-    <string>Scan for &amp;Broken Links...</string>
+    <string>Find &amp;Broken Links...</string>
    </property>
   </action>
  </widget>
