@@ -52,6 +52,10 @@ class LinkCheckDialog(QDialog):
             pass
         super().accept()
 
+    def reject(self):
+        "Redirect to standard accept() if Esc pressed or X button clicked."
+        return self.accept()
+
     def _blinkAndMark(self, widgetItem=None):
         """
         Return the link and bookmark objects for the specified list widget
