@@ -1,0 +1,85 @@
+"""
+broken_links.py - tools for checking for link rot
+"""
+
+import concurrent.futures
+from typing import Callable, Optional
+
+import requests
+
+from .models import Bookmark
+
+
+class LinkCheck:
+    """
+    The result of checking a link for accessibility.
+    """
+    def __init__(self, pk: int, name: str, url: str,
+                 status_code: Optional[int] = None,
+                 error_description: Optional[str] = None) -> None:
+        self.pk = pk                    #: primary key of bookmark in database
+        self.name = name                #: name of bookmark
+        self.url = url                  #: url of page
+        self.status_code = status_code  #: HTTP status code, if we got that far
+        #: description of an error that prevented an HTTP status code, e.g., timed out
+        self.error_description = error_description
+
+    @property
+    def successful(self) -> bool:
+        return self.status_code == 200 and not self.error_description
+
+    def __str__(self) -> str:
+        if self.successful:
+            return f"[ OK ] [200] {self.name} ({self.url})" 
+        elif self.status_code is not None:
+            return f"[FAIL] [{self.status_code}] {self.name} ({self.url})" 
+        else:
+            return f"[FAIL] [ERR] {self.error_description}: {self.name} ({self.url})" 
+
+
+# pylint: disable=too-many-return-statements
+def _check(pk: int, name: str, url: str) -> LinkCheck:
+    """
+    Given the url /url/, check to see if it accessible, and return a LinkCheck
+    object with the URL, primary key, and name, as well as the results of the check.
+    """
+    try:
+        r = requests.get(url)
+    except requests.exceptions.SSLError:
+        return LinkCheck(pk, name, url, None, "Invalid SSL certificate")
+    except requests.exceptions.ConnectionError:
+        return LinkCheck(pk, name, url, None, "Connection error")
+    except requests.exceptions.TooManyRedirects:
+        return LinkCheck(pk, name, url, None, "Redirect loop")
+    except requests.exceptions.Timeout:
+        return LinkCheck(pk, name, url, None, "Timed out")
+    except requests.exceptions.HTTPError as e:
+        return LinkCheck(pk, name, url, None, str(e))
+    except requests.exceptions.RequestException as e:
+        return LinkCheck(pk, name, url, None, str(e))
+    else:
+        return LinkCheck(pk, name, url, r.status_code)
+
+
+def scan(session, callback: Callable[[int, int, LinkCheck], None],
+         only_failures: bool = False) -> None:
+    """
+    Retrieve all bookmarks from the session /session/ and check their URLs in
+    parallel. Whenever a result comes back, call the /callback/ function of
+    three parameters with the number of the current item (indexed by time),
+    the total number of items, and the LinkCheck object.
+
+    If /only_failures/ is set, only items which have failed will trigger a
+    callback. The items with no issues will never be returned to the caller.
+    """
+    marks = session.query(Bookmark).all()
+
+    futures = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
+        for mark in marks:
+            future = executor.submit(_check, pk=mark.id, name=mark.name, url=mark.url)
+            futures.append(future)
+
+        for idx, fut in enumerate(concurrent.futures.as_completed(futures), 1):
+            if (not fut.result().successful) or (not only_failures):
+                callback(idx, len(marks), fut.result())

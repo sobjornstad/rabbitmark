@@ -368,6 +368,7 @@
     <addaction name="actionExport_CSV"/>
     <addaction name="separator"/>
     <addaction name="action_Quit"/>
+    <addaction name="actionBrokenLinks"/>
    </widget>
    <widget class="QMenu" name="menuBookmark">
     <property name="title">
@@ -551,6 +552,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+B</string>
+   </property>
+  </action>
+  <action name="actionBrokenLinks">
+   <property name="text">
+    <string>Scan for &amp;Broken Links...</string>
    </property>
   </action>
  </widget>

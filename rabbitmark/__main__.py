@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session as SessionType
 
 from .bookmark_table import BookmarkTableModel
 from .forms.main import Ui_MainWindow
+from .librm import broken_links
 from .librm import bookmark
 from .librm import tag as tag_ops
 from .librm.models import Base
@@ -55,6 +56,7 @@ class MainWindow(QMainWindow):
         sf.actionMergeTag.triggered.connect(self.onMergeTag)
         sf.actionWayBack.triggered.connect(self.onWayBackMachine)
         sf.actionShowPrivate.triggered.connect(self.onTogglePrivate)
+        sf.actionBrokenLinks.triggered.connect(self.onCheckBrokenLinks)
         self.showPrivates = False
 
         sf.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
@@ -298,6 +300,12 @@ class MainWindow(QMainWindow):
             if not self.form.tagList.findItems(i, Qt.MatchExactly):
                 self.form.tagList.addItem(i)
         self.form.tagList.sortItems()
+
+    def onCheckBrokenLinks(self) -> None:
+        def callback(at: int, tot: int, obj: broken_links.LinkCheck):
+            print(f"{at:03d}/{tot:03d} {obj}")
+
+        broken_links.scan(self.session, callback, only_failures=True)
 
     def maybeSaveBookmark(self, old, new) -> None:
         """
