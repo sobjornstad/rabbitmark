@@ -2,7 +2,7 @@
 *.db-shm*
 *.db-wal*
 *.pyc
-forms/*
+rabbitmark/forms/*
 __pycache__/
 .mypy_cache/
 .pytest_cache/
