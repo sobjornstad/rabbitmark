@@ -130,11 +130,7 @@ class BookmarkTableModel(QAbstractTableModel):
         self.dataChanged.emit()
         self.endResetModel()
 
-    def deleteBookmark(self, index):
-        """
-        Delete the bookmark at /index/ in the table. Return the index of the
-        entry to select after deletion, or None if this is the only entry.
-        """
+    def nextAfterDelete(self, index):
         row = index.row()
         mark = self.L[row]
         try:
@@ -146,15 +142,15 @@ class BookmarkTableModel(QAbstractTableModel):
         except IndexError:
             # there are no other items
             nextObj = None
-
-        sess = self.parent.Session()
-        bookmark.delete_bookmark(sess, mark)
-        sess.commit()
-
-        self.beginResetModel()
-        del self.L[row]
-        self.endResetModel()
         return self.indexFromPk(nextObj.id)
+
+    def updateAfterDelete(self, index) -> None:
+        """
+        Call after deleting the bookmark at /row/ in the table.
+        """
+        self.beginResetModel()
+        del self.L[index.row()]
+        self.endResetModel()
 
     def getObj(self, index):
         "Return an object from the list by its model index."
@@ -269,9 +265,15 @@ class MainWindow(QMainWindow):
                            "No bookmark selected")
             return
         curIndex = self.tableView.currentIndex()
-        newIndex = self.tableModel.deleteBookmark(curIndex)
+        nextRow = self.tableModel.nextAfterDelete(curIndex)
+
+        mark = self.tableModel.getObj(curIndex)
+        bookmark.delete_bookmark(self.session, mark)
+        self.session.commit()
+
+        self.tableModel.updateAfterDelete(curIndex)
         self.resetTagList()
-        self.tableView.setCurrentIndex(newIndex)
+        self.tableView.setCurrentIndex(nextRow)
 
     def copyUrl(self):
         QApplication.clipboard().setText(self.form.urlBox.text())
