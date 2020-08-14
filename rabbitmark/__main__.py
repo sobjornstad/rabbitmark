@@ -84,6 +84,9 @@ class MainWindow(QMainWindow):
         self.form.tagList.itemSelectionChanged.connect(self.doUpdateForSearch)
         self.doUpdateForSearch()
 
+    def _currentSearchMode(self) -> utils.SearchMode:
+        return utils.SearchMode(self.form.tagsModeDropdown.currentIndex())
+
     #pylint: disable=unused-argument
     def closeEvent(self, evt) -> NoReturn:
         "Catch click of the X button, etc., and properly quit."
@@ -126,17 +129,21 @@ class MainWindow(QMainWindow):
                 if str(i.text()) != utils.NOTAGS]
 
         # Full-text filter is automatically cleared on add -- otherwise, the new
-        # item won't # be visible! (In fact, RabbitMark actually ends up crashing.)
+        # item won't be visible!
         self.form.searchBox.setText("")
         self.doUpdateForSearch()
+        # If in AND mode, turn off "no tags" mode, or it similarly won't be visible.
+        if self._currentSearchMode() == utils.SearchMode.And:
+            self.form.tagList.item(0).setSelected(False)
 
         newBookmark = bookmark.add_bookmark(self.session, url, tags)
         self.session.commit()  # pylint: disable=no-member
 
         self.doUpdateForSearch()
         index = self.tableModel.indexFromPk(newBookmark.id)
-        self.tableView.setCurrentIndex(index)
-        self.form.nameBox.setFocus()
+        if index is not None:
+            self.tableView.setCurrentIndex(index)
+            self.form.nameBox.setFocus()
 
     def deleteCurrent(self) -> None:
         "Delete the selected bookmark."
@@ -286,9 +293,7 @@ class MainWindow(QMainWindow):
                         for i in self.form.tagList.selectedItems()]
         mark = self.tableModel.getObj(self.tableView.currentIndex())
         oldId = None if mark is None else mark.id
-        searchMode = utils.SearchMode(
-            self.form.tagsModeDropdown.currentIndex())
-
+        searchMode = self._currentSearchMode()
 
         nameText = "%" + self.form.searchBox.text() + "%"
         marks = bookmark.find_bookmarks(self.session, nameText, selectedTags,
