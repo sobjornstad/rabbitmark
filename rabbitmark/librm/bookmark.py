@@ -66,6 +66,46 @@ def maybe_expunge_tag(session, tag: Tag) -> bool:
     else:
         return False
 
+
+def save_if_edited(session, mark, content):
+    """
+    If the content in 'content' differs from the data in the db obj
+    'mark', update 'mark' to match the contents of 'content'.
+
+    Returns True if an update was made, False if not.
+    """
+    if not (mark.name == content['name'] and
+            mark.description == content['descr'] and
+            mark.url == content['url'] and
+            mark.private == content['priv'] and
+            [i.text for i in mark.tags] == content['tags']):
+        mark.name = content['name']
+        mark.description = content['descr']
+        mark.url = content['url']
+        mark.private = content['priv']
+
+        # add new tags
+        new_tags = content['tags']
+        for tag in new_tags:
+            existing_tag = session.query(Tag).filter(Tag.text == tag).first()
+            if existing_tag:
+                session.merge(existing_tag)
+                mark.tags.append(existing_tag)
+            else:
+                new_tag = Tag(text=tag)
+                session.add(new_tag)
+                mark.tags.append(new_tag)
+
+        # remove tags that are no longer used
+        for tag in mark.tags:
+            if tag.text not in new_tags:
+                mark.tags.remove(tag)
+                maybe_expunge_tag(session, tag)
+        session.commit()
+        return True
+    return False
+
+
 # pylint: disable=singleton-comparison
 def find_bookmarks(session,
                    filter_text: str,

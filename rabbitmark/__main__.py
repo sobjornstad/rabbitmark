@@ -3,7 +3,7 @@ main.py -- RabbitMark Qt application
 """
 
 # RabbitMark
-# Copyright (c) 2015, 2018, 2019 Soren Bjornstad.
+# Copyright (c) 2015, 2018, 2019, 2020 Soren Bjornstad.
 # All rights reserved (temporary; if you read this and want such, contact me
 # for relicensing under some FOSS license).
 
@@ -74,14 +74,11 @@ class BookmarkTableModel(QAbstractTableModel):
                     % self.value)
 
 
-    def __init__(self, parent, Session):
+    def __init__(self, parent):
         QAbstractTableModel.__init__(self)
         self.parent = parent
-        self.Session = Session
-        self.session = self.Session()
         self.headerdata = ("Name", "Tags")
-        self.L = None
-        self.updateForSearch("", [], False, utils.SearchMode.Or)
+        self.L = []
 
     ### Standard reimplemented methods ###
     def rowCount(self, parent): #pylint: disable=no-self-use,unused-argument
@@ -126,11 +123,9 @@ class BookmarkTableModel(QAbstractTableModel):
                 return self.index(row, 0)
         return None
 
-    def updateForSearch(self, searchText, tags, showPrivates, searchMode):
-        nameText = "%" + searchText + "%"
+    def updateContents(self, marks):
         self.beginResetModel()
-        self.L = bookmark.find_bookmarks(self.session, nameText, tags,
-                                         showPrivates, searchMode)
+        self.L = marks
         self.sort(0)
         self.dataChanged.emit()
         self.endResetModel()
@@ -152,50 +147,14 @@ class BookmarkTableModel(QAbstractTableModel):
             # there are no other items
             nextObj = None
 
-        bookmark.delete_bookmark(self.session, mark)
-        self.session.commit()
+        sess = self.parent.Session()
+        bookmark.delete_bookmark(sess, mark)
+        sess.commit()
 
         self.beginResetModel()
         del self.L[row]
         self.endResetModel()
         return self.indexFromPk(nextObj.id)
-
-    def saveIfEdited(self, mark, content):
-        """
-        If the content in 'content' differs from the data in the db obj
-        'mark', update 'mark' to match the contents of 'content'.
-
-        Returns True if an update was made, False if not.
-        """
-        if not (mark.name == content['name'] and
-                mark.description == content['descr'] and
-                mark.url == content['url'] and
-                mark.private == content['priv'] and
-                [i.text for i in mark.tags] == content['tags']):
-            mark.name = content['name']
-            mark.description = content['descr']
-            mark.url = content['url']
-            mark.private = content['priv']
-
-            # add new tags
-            new_tags = content['tags']
-            for tag in new_tags:
-                existingTag = self.session.query(Tag).filter(
-                    Tag.text == tag).first()
-                if existingTag:
-                    mark.tags.append(existingTag)
-                else:
-                    new_tag = Tag(text=tag)
-                    self.session.add(new_tag)
-                    mark.tags.append(new_tag)
-            # remove tags that are no longer used
-            for tag in mark.tags:
-                if tag.text not in new_tags:
-                    mark.tags.remove(tag)
-                    bookmark.maybe_expunge_tag(self.session, tag)
-            self.commit()
-            return True
-        return False
 
     def getObj(self, index):
         "Return an object from the list by its model index."
@@ -203,14 +162,6 @@ class BookmarkTableModel(QAbstractTableModel):
             return self.L[index.row()]
         except IndexError:
             return None
-
-    def commit(self):
-        """
-        Commit all changes. Should be called before quitting or doing anything
-        similarly destructive to the memory image to make sure that no
-        transactions are still active.
-        """
-        self.session.commit()
 
 
 class MainWindow(QMainWindow):
@@ -221,6 +172,7 @@ class MainWindow(QMainWindow):
         self.form.setupUi(self)
 
         self.Session = make_Session()
+        self.session = self.Session()
 
         # set up actions
         sf = self.form
@@ -251,13 +203,13 @@ class MainWindow(QMainWindow):
 
         # set up data table
         self.tableView = self.form.bookmarkTable
-        self.tableModel = BookmarkTableModel(self, self.Session)
+        self.tableModel = BookmarkTableModel(self)
         self.tableView.setModel(self.tableModel)
         self.sm = self.tableView.selectionModel()
         self.sm.selectionChanged.connect(self.fillEditPane)
 
         # set up tag list
-        self.tags = tag_ops.scan_tags(self.Session())
+        self.tags = tag_ops.scan_tags(self.session)
         for i in self.tags:
             self.form.tagList.addItem(i)
         self.form.tagList.sortItems()
@@ -277,7 +229,8 @@ class MainWindow(QMainWindow):
         # fake changing focus: the widget name for new is arbitrary,
         # one of the editable boxes is required for old
         self.maybeSaveBookmark(old=self.form.nameBox, new=self.form.nameBox)
-        self.tableModel.commit()
+        self.session.commit()
+        self.session.close()
         sys.exit(0)
 
     def onTogglePrivate(self):
@@ -301,9 +254,8 @@ class MainWindow(QMainWindow):
     def _newBookmark(self, url):
         tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
-        session = self.Session()
-        newBookmark = bookmark.add_bookmark(session, url, tags)
-        session.commit()
+        newBookmark = bookmark.add_bookmark(self.session, url, tags)
+        self.session.commit()
 
         self.doUpdateForSearch()
         index = self.tableModel.indexFromPk(newBookmark.id)
@@ -351,7 +303,7 @@ class MainWindow(QMainWindow):
         new, doContinue = utils.inputBox("New name for tag:",
                                          "Rename tag", tag)
         if doContinue:
-            if tag_ops.rename_tag(self.Session(), tag, new):
+            if tag_ops.rename_tag(self.session, tag, new):
                 self.resetTagList()
                 self.fillEditPane()
             else:
@@ -384,7 +336,7 @@ class MainWindow(QMainWindow):
                               "all of your bookmarks. Are you sure you want "
                               "to continue?" % tag, "Delete tag?")
         if r == QMessageBox.Yes:
-            tag_ops.delete_tag(self.Session(), tag)
+            tag_ops.delete_tag(self.session, tag)
             self.resetTagList()
             self.fillEditPane()
 
@@ -393,7 +345,7 @@ class MainWindow(QMainWindow):
         Update the tag list widget to match the current state of the db.
         """
         # Get updated tag list.
-        self.tags = tag_ops.scan_tags(self.Session())
+        self.tags = tag_ops.scan_tags(self.session)
 
         # Remove tags that no longer exist.
         toRemove = [self.form.tagList.item(i)
@@ -430,7 +382,7 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
             if mark is None:
                 return # nothing is selected
-            if self.tableModel.saveIfEdited(mark, self.mRepr()):
+            if bookmark.save_if_edited(self.session, mark, self.mRepr()):
                 self.resetTagList()
             self.doUpdateForSearch()
 
@@ -452,11 +404,12 @@ class MainWindow(QMainWindow):
         oldId = None if mark is None else mark.id
         searchMode = utils.SearchMode(
             self.form.tagsModeDropdown.currentIndex())
-        self.tableModel.updateForSearch(
-            str(self.form.searchBox.text()),
-            selectedTags,
-            self.showPrivates,
-            searchMode)
+
+
+        nameText = "%" + self.form.searchBox.text() + "%"
+        marks = bookmark.find_bookmarks(self.session, nameText, selectedTags,
+                                        self.showPrivates, searchMode)
+        self.tableModel.updateContents(marks)
         self.reselectItem(oldId)
         self.updateTitleCount(self.tableModel.rowCount(self))
 
