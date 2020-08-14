@@ -2,7 +2,7 @@
 bookmark.py -- RabbitMark bookmark operations
 """
 
-from typing import Any, Dict, Iterable, Sequence
+from typing import Any, Dict, Iterable, Optional, Sequence
 
 from sqlalchemy import or_
 
@@ -133,3 +133,12 @@ def find_bookmarks(session,
     if not include_private:
         query = query.filter(Bookmark.private == False)
     return query.all()
+
+def get_bookmark_by_id(session, pk: int) -> Optional[Bookmark]:
+    """
+    Retrieve a bookmark by its primary key/ID.
+
+    Return:
+        A bookmark object, or None if no object exists with the provided ID.
+    """
+    return session.query(Bookmark).filter(Bookmark.id == pk).one_or_none()

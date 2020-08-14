@@ -30,6 +30,7 @@ from .librm import tag as tag_ops
 from .librm.models import Base
 from . import utils
 from . import wayback_search_dialog
+from . import link_check_dialog
 
 
 class MainWindow(QMainWindow):
@@ -91,7 +92,6 @@ class MainWindow(QMainWindow):
         self.detailsForm.setupUi(self.form.detailsWidget)
         self.detailsForm.copyUrlButton.clicked.connect(self.copyUrl)
         self.detailsForm.browseUrlButton.clicked.connect(self.openUrl)
-
 
         # set up re-search triggers and update for the first time
         self.form.searchBox.textChanged.connect(self.doUpdateForSearch)
@@ -310,10 +310,14 @@ class MainWindow(QMainWindow):
         self.form.tagList.sortItems()
 
     def onCheckBrokenLinks(self) -> None:
+        blinks = []
         def callback(at: int, tot: int, obj: broken_links.LinkCheck):
             print(f"{at:03d}/{tot:03d} {obj}")
+            blinks.append(obj)
 
         broken_links.scan(self.session, callback, only_failures=True)
+        dlg = link_check_dialog.LinkCheckDialog(self, blinks, self.session)
+        dlg.exec_()
 
     def maybeSaveBookmark(self, old, new) -> None:
         """

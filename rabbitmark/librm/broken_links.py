@@ -26,7 +26,7 @@ class LinkCheck:
 
     @property
     def successful(self) -> bool:
-        return self.status_code == 200 and not self.error_description
+        return self.status_code == 200
 
     def __str__(self) -> str:
         if self.successful:
@@ -58,7 +58,7 @@ def _check(pk: int, name: str, url: str) -> LinkCheck:
     except requests.exceptions.RequestException as e:
         return LinkCheck(pk, name, url, None, str(e))
     else:
-        return LinkCheck(pk, name, url, r.status_code)
+        return LinkCheck(pk, name, url, r.status_code, r.reason)
 
 
 def scan(session, callback: Callable[[int, int, LinkCheck], None],
