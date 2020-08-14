@@ -185,28 +185,15 @@ class MainWindow(QMainWindow):
     def copyUrl(self) -> None:
         QApplication.clipboard().setText(self.detailsForm.urlBox.text())
     def openUrl(self) -> None:
-        QDesktopServices.openUrl(QUrl(self.form.detailsForm.urlBox.text()))
+        QDesktopServices.openUrl(QUrl(self.detailsForm.urlBox.text()))
 
     def onWayBackMachine(self) -> None:
         "Find a snapshot of the item's URL in the WayBackMachine."
         mark = self.tableModel.getObj(self.tableView.currentIndex())
-
-        if re.match("https?://web.archive.org/", mark.url):
-            if utils.questionBox(
-                    "This bookmark appears to already be pointing at a snapshot in "
-                    "the WayBackMachine. Would you like to pick a new snapshot?",
-                    "Select new snapshot?") == QMessageBox.Yes:
-                url = re.sub("https?://web.archive.org/web/[0-9]+/(.*)", r"\1",
-                             mark.url)
-            else:
-                return
-        else:
-            url = mark.url
-
-        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
-        archiveUrl = wayback_search_dialog.way_back_from_url(self, url)
+        archiveUrl = wayback_search_dialog.init_wayback_search(self, mark.url)
         if archiveUrl is not None:
             self.detailsForm.urlBox.setText(archiveUrl)
+            self.maybeSaveBookmark(self.detailsForm.urlBox, None)
 
     def onRenameTag(self) -> None:
         "Rename the selected tag."

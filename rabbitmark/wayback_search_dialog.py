@@ -2,12 +2,13 @@
 wayback_search_dialog.py -- interface for searching the WayBackMachine
 """
 
+import re
 from typing import Optional
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QApplication, QDialog
-from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtCore import QUrl
+from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox
+from PyQt5.QtGui import QDesktopServices, QCursor
+from PyQt5.QtCore import QUrl, Qt
 
 from .forms.archivesearch import Ui_Dialog as Ui_ArchiveDialog
 from .librm import binary_search
@@ -171,6 +172,30 @@ def way_back_from_url(parent, original_url: str) -> Optional[str]:
         return None
     else:
         return snapshots[snapshotIndex].archived_url
+
+
+def init_wayback_search(parent, url: str) -> Optional[str]:
+    """
+    Launch a WayBackMachine search dialog for /url/ with widget /parent/.
+    If the URL is already of a WBM snapshot, warn the user and let them cancel.
+
+    Return:
+        - A URL if one should replace the existing URL.
+        - None if the user canceled at any point in the process.
+    """
+    if re.match("https?://web.archive.org/", url):
+        if utils.questionBox(
+                "This bookmark appears to already be pointing at a snapshot in "
+                "the WayBackMachine. Would you like to pick a new snapshot?",
+                "Select new snapshot?") == QMessageBox.Yes:
+            new_url = re.sub("https?://web.archive.org/web/[0-9]+/(.*)", r"\1", url)
+        else:
+            return None
+    else:
+        new_url = url
+
+    QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+    return way_back_from_url(parent, new_url)
 
 
 def _stepsAfter(steps: int) -> str:
