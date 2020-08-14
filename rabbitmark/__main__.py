@@ -120,8 +120,15 @@ class MainWindow(QMainWindow):
 
     def _newBookmark(self, url) -> None:
         "Common portion of creating a new bookmark."
+        # Create the new item with any tags that are selected.
         tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
+
+        # Full-text filter is automatically cleared on add -- otherwise, the new
+        # item won't # be visible! (In fact, RabbitMark actually ends up crashing.)
+        self.form.searchBox.setText("")
+        self.doUpdateForSearch()
+
         newBookmark = bookmark.add_bookmark(self.session, url, tags)
         self.session.commit()  # pylint: disable=no-member
 
