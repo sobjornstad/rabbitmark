@@ -5,7 +5,29 @@ tag.py -- RabbitMark tag operations
 from typing import Sequence
 
 from ..utils import NOTAGS
-from .models import Tag
+from .models import Tag, Bookmark
+
+
+def change_tags(session, existing_bookmark: Bookmark, new_tags: Sequence[str]) -> None:
+    """
+    Replace the tags on /existing_bookmark/ with the list of /new_tags/.
+    """
+    # remove tags that are no longer used
+    for tag in existing_bookmark.tags[:]:
+        if tag.text not in new_tags:
+            existing_bookmark.tags.remove(tag)
+            maybe_expunge_tag(session, tag)
+    session.flush()
+
+    # add new tags
+    for tag in new_tags:
+        existing_tag = session.query(Tag).filter(Tag.text == tag).first()
+        if existing_tag:
+            existing_bookmark.tags.append(existing_tag)
+        else:
+            new_tag = Tag(text=tag)
+            session.add(new_tag)
+            existing_bookmark.tags.append(new_tag)
 
 
 def delete_tag(session, tag_name: str) -> None:

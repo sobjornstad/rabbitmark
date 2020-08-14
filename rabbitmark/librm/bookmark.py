@@ -8,7 +8,7 @@ from sqlalchemy import or_
 
 from ..utils import NOTAGS, SearchMode
 from .models import Bookmark, Tag
-from .tag import maybe_expunge_tag
+from .tag import maybe_expunge_tag, change_tags
 
 
 def add_bookmark(session, url: str, tags: Iterable[str]) -> Bookmark:
@@ -80,22 +80,7 @@ def save_if_edited(session, existing_bookmark: Bookmark,
 
         # add new tags
         new_tags = new_content['tags']
-        for tag in new_tags:
-            existing_tag = session.query(Tag).filter(Tag.text == tag).first()
-            if existing_tag:
-                session.merge(existing_tag)
-                existing_bookmark.tags.append(existing_tag)
-            else:
-                new_tag = Tag(text=tag)
-                session.add(new_tag)
-                existing_bookmark.tags.append(new_tag)
-
-        # remove tags that are no longer used
-        for tag in existing_bookmark.tags:
-            if tag.text not in new_tags:
-                existing_bookmark.tags.remove(tag)
-                maybe_expunge_tag(session, tag)
-
+        change_tags(session, existing_bookmark, new_tags)
         return True
     else:
         return False
