@@ -66,6 +66,7 @@ class MainWindow(QMainWindow):
         self.tableView.setModel(self.tableModel)
         self.sm = self.tableView.selectionModel()
         self.sm.selectionChanged.connect(self.fillEditPane)
+        self.tableView.setColumnWidth(0, 500)
 
         # set up tag list
         self.tags = tag_ops.scan_tags(self.session, self.showPrivates)

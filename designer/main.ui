@@ -188,11 +188,17 @@
            <property name="tabKeyNavigation">
             <bool>false</bool>
            </property>
+           <property name="alternatingRowColors">
+            <bool>true</bool>
+           </property>
            <property name="selectionMode">
             <enum>QAbstractItemView::SingleSelection</enum>
            </property>
            <property name="selectionBehavior">
             <enum>QAbstractItemView::SelectRows</enum>
+           </property>
+           <property name="gridStyle">
+            <enum>Qt::NoPen</enum>
            </property>
            <attribute name="horizontalHeaderDefaultSectionSize">
             <number>250</number>
