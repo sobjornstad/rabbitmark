@@ -7,7 +7,7 @@ from typing import Optional, List
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtCore import pyqtSignal, QThread
+from PyQt5.QtCore import pyqtSignal, QThread, QUrl
 
 from .librm import bookmark
 from .librm import broken_links
@@ -36,6 +36,8 @@ class LinkCheckDialog(QDialog):
         # set up details widget
         self.detailsForm = BookmarkDetailsWidget()
         self.detailsForm.setupUi(self.form.detailsWidget)
+        self.detailsForm.browseUrlButton.clicked.connect(self.onBrowseUrl)
+        self.detailsForm.copyUrlButton.clicked.connect(self.onCopyUrl)
 
         self.form.pageList.addItems(sorted(self.blinks.keys()))
         self.form.pageList.item(0).setSelected(True)
@@ -118,6 +120,12 @@ class LinkCheckDialog(QDialog):
             # We've handled all the items. Close the dialog.
             self.accept()
 
+    def onBrowseUrl(self) -> None:
+        QDesktopServices.openUrl(QUrl(self.detailsForm.urlBox.text()))
+
+    def onCopyUrl(self) -> None:
+        QApplication.clipboard().setText(self.detailsForm.urlBox.text())
+
     def onDeleteBookmark(self):
         "Delete a broken link from the database."
         _, mark = self._blinkAndMark()
@@ -135,6 +143,13 @@ class LinkCheckDialog(QDialog):
             self.detailsForm.urlBox.setText(new_url)
             self.detailsForm.urlBox.setFocus()
 
+    def onDismissBookmark(self):
+        "Remove a bookmark from the list (when we're done dealing with it)."
+        self.saveBookmark()
+        _, mark = self._blinkAndMark()
+        del self.blinks[mark.name]
+        self.form.pageList.takeItem(self.form.pageList.currentRow())
+
     def saveBookmark(self, mark=None):
         "Save the specified bookmark, or the currently selected one if not specified."
         if mark is None:
@@ -142,13 +157,6 @@ class LinkCheckDialog(QDialog):
         if bookmark.save_if_edited(self.session, mark,
                                    utils.mark_dictionary(self.detailsForm)):
             self.session.commit()  # pylint: disable=no-member
-
-    def onDismissBookmark(self):
-        "Remove a bookmark from the list (when we're done dealing with it)."
-        self.saveBookmark()
-        _, mark = self._blinkAndMark()
-        del self.blinks[mark.name]
-        self.form.pageList.takeItem(self.form.pageList.currentRow())
 
 
 class LinkCheckThread(QThread):
