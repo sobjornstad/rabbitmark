@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         sf.tagsInvertButton.clicked.connect(lambda: self.tagsSelect('invert'))
 
         findShortcut = QShortcut(QKeySequence("Ctrl+F"), sf.searchBox)
-        findShortcut.activated.connect(sf.searchBox.setFocus)
+        findShortcut.activated.connect(self.onFocusFind)
 
         # Set up tag mode dropdown.
         # Indexes of these options should match with utils.SearchMode.
@@ -380,6 +380,10 @@ class MainWindow(QMainWindow):
             self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
 
     # Entire view
+    def onFocusFind(self) -> None:
+        self.form.searchBox.selectAll()
+        self.form.searchBox.setFocus()
+
     def onCheckBrokenLinks(self) -> None:
         "Scan the database for broken links and help the user correct them."
         obtain_dlg = link_check_dialog.LinkCheckProgressDialog(self, self.Session)
