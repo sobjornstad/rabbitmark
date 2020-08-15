@@ -44,7 +44,7 @@ def _check(pk: int, name: str, url: str) -> LinkCheck:
     object with the URL, primary key, and name, as well as the results of the check.
     """
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.head(url, timeout=10, allow_redirects=True)
     except requests.exceptions.SSLError:
         return LinkCheck(pk, name, url, None, "Invalid SSL certificate")
     except requests.exceptions.ConnectionError:
