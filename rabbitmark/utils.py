@@ -19,55 +19,42 @@ class SearchMode(Enum):
     Or = 0
     And = 1
 
-def informationBox(text, title=None) -> None:
-    """
-    Message box with the information icon and an OK button.
-    """
+
+def _box(text: str, title: str, icon: QMessageBox.Icon) -> QMessageBox:
+    "Helper function to do most of the work of setting up a standard message box."
     msgBox = QMessageBox()
     msgBox.setText(text)
-    msgBox.setIcon(QMessageBox.Information)
+    msgBox.setIcon(icon)
     if title:
         msgBox.setWindowTitle(title)
-    msgBox.exec_()
+    return msgBox
+
+
+def informationBox(text, title=None) -> None:
+    "Show a message box with the information icon and an OK button."
+    _box(text, title, QMessageBox.Information).exec_()
+
 
 def errorBox(text, title=None) -> None:
-    """
-    Message box with the error icon and an OK button.
-    """
-    msgBox = QMessageBox()
-    msgBox.setText(text)
-    msgBox.setIcon(QMessageBox.Critical)
-    if title:
-        msgBox.setWindowTitle(title)
-    msgBox.exec_()
+    "Show a message box with the error icon and an OK button."
+    _box(text, title, QMessageBox.Critical).exec_()
+
 
 def warningBox(text, title=None) -> None:
-    """
-    Message box with the warning icon and an OK button.
-    """
-    msgBox = QMessageBox()
-    msgBox.setText(text)
-    msgBox.setIcon(QMessageBox.Warning)
-    if title:
-        msgBox.setWindowTitle(title)
-    msgBox.exec_()
+    "Show a message box with the warning icon and an OK button."
+    _box(text, title, QMessageBox.Warning).exec_()
 
-def questionBox(text, title=None):
-    """
-    Message box with the question icon and Yes and No buttons.
 
-    Returns QMessageBox.Yes if yes was pushed, QMessageBox.No if no was pushed.
-    QMessageBox is PyQt4.QtGui.QMessageBox if you need to import it to use
-    those constants.
+def questionBox(text, title=None) -> bool:
     """
-    msgBox = QMessageBox()
-    msgBox.setText(text)
-    msgBox.setIcon(QMessageBox.Question)
+    Show a message box with the question icon and Yes and No buttons.
+
+    Returns True if yes pushed, False if no.
+    """
+    msgBox = _box(text, title, QMessageBox.Question)
     msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
     msgBox.setDefaultButton(QMessageBox.No)
-    if title:
-        msgBox.setWindowTitle(title)
-    return msgBox.exec_()
+    return (msgBox.exec_() == QMessageBox.Yes)
 
 
 def inputBox(label, title=None, defaultText=None) -> Tuple[str, bool]:

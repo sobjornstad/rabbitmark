@@ -1,6 +1,17 @@
-* "Hapax legomena last" option in Tags menu
-* Don't jump the cursor around when focus is lost.
-* "Pinned" flag (put at top of display)
-* Add an option to select the tags that the current bookmark has?
-* Add some sort of inter-item linkage function.
-* Clean up where committing and flushing is done
+Refactor/Bugfix:
+    * Clean up where committing and flushing is done
+    * Don't jump the cursor around when focus is lost.
+    * Force name uniqueness in tags and marks
+    * Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
+
+Implement:
+    * Indicate which WBM snapshots returned 404/403 at crawl time so user doesn't select one of those
+    * New/Open (?). At any rate don't hard-code the database file
+    * Import/Export functions
+    * Help menu options
+    * Flag to skip link check
+    * WBM auto-save and fallback field
+
+Possible ideas:
+    * CLI interface
+    * Frequency of tags; "Hapax legomena last" option

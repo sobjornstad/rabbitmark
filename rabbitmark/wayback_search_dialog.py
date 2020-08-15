@@ -187,7 +187,7 @@ def init_wayback_search(parent, url: str) -> Optional[str]:
         if utils.questionBox(
                 "This bookmark appears to already be pointing at a snapshot in "
                 "the WayBackMachine. Would you like to pick a new snapshot?",
-                "Select new snapshot?") == QMessageBox.Yes:
+                "Select new snapshot?"):
             new_url = re.sub("https?://web.archive.org/web/[0-9]+/(.*)", r"\1", url)
         else:
             return None

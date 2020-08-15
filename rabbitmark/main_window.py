@@ -334,11 +334,10 @@ class MainWindow(QMainWindow):
         if tag is None:
             return
 
-        r = utils.questionBox(
-            f"This will permanently delete the tag '{tag}' from all of your bookmarks. "
-            f"Are you sure you want to continue?",
-            "Delete tag?")
-        if r == QMessageBox.Yes:
+        if utils.questionBox(f"This will permanently delete the tag '{tag}' "
+                             f"from all of your bookmarks. "
+                             f"Are you sure you want to continue?",
+                             "Delete tag?"):
             tag_ops.delete_tag(self.session, tag)
             self.session.commit()  # pylint: disable=no-member
             self._resetTagList()
