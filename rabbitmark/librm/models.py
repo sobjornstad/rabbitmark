@@ -24,16 +24,19 @@ class Bookmark(Base):  # type: ignore
     __tablename__ = 'bookmarks'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
-    url = Column(String)
-    description = Column(String)
+    name = Column(String, nullable=False)
+    url = Column(String, nullable=False)
+    description = Column(String, nullable=False)
     tags = relationship("Tag",
                         secondary=mark_tag_assoc,
                         back_populates="bookmarks")
-    private = Column(Boolean)
+    private = Column(Boolean, nullable=False)
+    skip_linkcheck = Column(Boolean, nullable=False)
 
     def __repr__(self):
-        return "<Bookmark named %s>" % self.name
+        return (f"<Bookmark id={self.id} name={self.name} url={self.url} "
+                f"tags={self.tags} private={self.private} "
+                f"skip_linkcheck={self.skip_linkcheck}>")
 
 
 class Tag(Base):  # type: ignore

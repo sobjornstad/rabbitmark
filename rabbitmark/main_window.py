@@ -227,6 +227,7 @@ class MainWindow(QMainWindow):
             sfdw.urlBox.setText(mark.url)
             sfdw.descriptionBox.setPlainText(mark.description)
             sfdw.privateCheck.setChecked(mark.private)
+            sfdw.linkcheckCheck.setChecked(mark.skip_linkcheck)
             tags = ', '.join([i.text for i in mark.tags])
             sfdw.tagsBox.setText(tags)
             # If a name or URL is too long to fit in the box, this will make
@@ -251,7 +252,7 @@ class MainWindow(QMainWindow):
         """
         sfdw = self.detailsForm
         if old in (sfdw.nameBox, sfdw.urlBox, sfdw.descriptionBox, sfdw.tagsBox,
-                   sfdw.privateCheck):
+                   sfdw.privateCheck, sfdw.linkcheckCheck):
             mark = self.tableModel.getObj(self.tableView.currentIndex())
             QApplication.processEvents()
             if mark is None:

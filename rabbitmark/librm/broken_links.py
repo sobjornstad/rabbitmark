@@ -92,7 +92,8 @@ def scan(session, callback: Callable[[int, int, LinkCheck], None],
     If /only_failures/ is set, only items which have failed will trigger a
     callback. The items with no issues will never be returned to the caller.
     """
-    marks = session.query(Bookmark).all()
+    # pylint: disable=singleton-comparison
+    marks = session.query(Bookmark).filter(Bookmark.skip_linkcheck == False).all()
 
     futures = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:

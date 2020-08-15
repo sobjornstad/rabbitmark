@@ -16,7 +16,8 @@ def add_bookmark(session, url: str, tags: Iterable[str]) -> Bookmark:
     Add a new bookmark using the provided URL and tags, leaving other fields
     blank. Returns the new Bookmark object.
     """
-    bookmark = Bookmark(name="", url=url, description="", private=False)
+    bookmark = Bookmark(name="", url=url, description="", private=False,
+                        skip_linkcheck=False)
     session.add(bookmark)
     for tag in tags:
         add_tag_to_bookmark(session, bookmark, tag)
@@ -65,7 +66,7 @@ def save_if_edited(session, existing_bookmark: Bookmark,
         The bookmark is updated on the database. The changes are not committed.
     """
     def _dirty():
-        for i in ('name', 'description', 'url', 'private'):
+        for i in ('name', 'description', 'url', 'private', 'skip_linkcheck'):
             if getattr(existing_bookmark, i) != new_content[i]:
                 return True
         if [i.text for i in existing_bookmark.tags] != new_content['tags']:
@@ -77,6 +78,7 @@ def save_if_edited(session, existing_bookmark: Bookmark,
         existing_bookmark.description = new_content['description']
         existing_bookmark.url = new_content['url']
         existing_bookmark.private = new_content['private']
+        existing_bookmark.skip_linkcheck = new_content['skip_linkcheck']
 
         # add new tags
         new_tags = new_content['tags']

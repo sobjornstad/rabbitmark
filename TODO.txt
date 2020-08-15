@@ -2,15 +2,26 @@ Refactor/Bugfix:
     * Clean up where committing and flushing is done
     * Don't jump the cursor around when focus is lost.
     * Force name uniqueness in tags and marks
+    * Decide if indexes are needed
     * Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
 
 Implement:
     * New/Open (?). At any rate don't hard-code the database file
     * Import/Export functions
     * Help menu options
-    * Flag to skip link check
     * WBM auto-save and fallback field
 
 Possible ideas:
     * CLI interface
     * Frequency of tags; "Hapax legomena last" option
+
+
+Manual database upgrade steps:
+    - Dump the old DB:
+      sqlite3 sorenmarks-test.db_ .dump >dump.txt
+    - Remove CREATE TABLE and constraints
+    - Edit the bookmark insert statements to show the set of columns (not including tags) we're adding
+    - Add blanket UPDATE statements to fill default values in for the new columns
+    - Create fresh database by moving the file away and restarting RabbitMark
+    - Import into the new database:
+      sqlite3 sorenmarks-test.db <dump.txt

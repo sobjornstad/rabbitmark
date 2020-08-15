@@ -82,6 +82,7 @@ def mark_dictionary(detailsForm) -> Dict[str, Any]:
         'url': str(detailsForm.urlBox.text()),
         'description': str(detailsForm.descriptionBox.toPlainText()),
         'private': detailsForm.privateCheck.isChecked(),
+        'skip_linkcheck': detailsForm.linkcheckCheck.isChecked(),
         'tags': [i.strip() for i in
                  str(detailsForm.tagsBox.text()).split(',')
                  if i.strip() != ''],
