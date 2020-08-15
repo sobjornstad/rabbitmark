@@ -176,11 +176,12 @@
  <tabstops>
   <tabstop>nameBox</tabstop>
   <tabstop>urlBox</tabstop>
-  <tabstop>copyUrlButton</tabstop>
-  <tabstop>browseUrlButton</tabstop>
   <tabstop>tagsBox</tabstop>
   <tabstop>descriptionBox</tabstop>
   <tabstop>privateCheck</tabstop>
+  <tabstop>linkcheckCheck</tabstop>
+  <tabstop>copyUrlButton</tabstop>
+  <tabstop>browseUrlButton</tabstop>
  </tabstops>
  <resources/>
  <connections/>
