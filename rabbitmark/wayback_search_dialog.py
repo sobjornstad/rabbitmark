@@ -6,7 +6,7 @@ import re
 from typing import Optional
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5.QtGui import QDesktopServices, QCursor
 from PyQt5.QtCore import QUrl, Qt
 
@@ -33,7 +33,7 @@ class WayBackDialog(QDialog):
         "You are at snapshot %i, bisecting %i to %i (%i total snapshots).\n"
         "%s\n"
         "How do you want to proceed?")
-    snapshot_label_template = "The following snapshot is from %s:"
+    snapshot_label_template = "The following snapshot is from %s.%s"
 
     def __init__(self, parent, snapshots) -> None:
         """
@@ -89,6 +89,12 @@ class WayBackDialog(QDialog):
         """
         current_item = self.sd[self.bs.index]
         snapshot_time = current_item.formatted_timestamp(utils.DATE_FORMAT)
+        if re.match("[-45]", current_item.response):
+            snapshot_response_code = (
+                f"\n** Error {current_item.response} at crawl time. "
+                f"This snapshot probably will not work. **")
+        else:
+            snapshot_response_code = ""
 
         wut_do = "\nWhat do you want to do?"
         if self.bs.at_only:
@@ -105,7 +111,8 @@ class WayBackDialog(QDialog):
                 _stepsAfter(self.bs.remaining_steps))
 
         self.form.stateLabel.setText(state)
-        self.form.snapshotLabel.setText(self.snapshot_label_template % snapshot_time)
+        self.form.snapshotLabel.setText(
+            self.snapshot_label_template % (snapshot_time, snapshot_response_code))
         self.form.urlBox.setText(current_item.archived_url)
         self.form.urlBox.setCursorPosition(0)
 

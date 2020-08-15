@@ -5,7 +5,6 @@ Refactor/Bugfix:
     * Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
 
 Implement:
-    * Indicate which WBM snapshots returned 404/403 at crawl time so user doesn't select one of those
     * New/Open (?). At any rate don't hard-code the database file
     * Import/Export functions
     * Help menu options

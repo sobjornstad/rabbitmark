@@ -14,24 +14,26 @@ class WaybackSnapshot:
     """
     A snapshot of a website in the WayBackMachine.
     """
-    def __init__(self, original_url: str, time: datetime.datetime, page_path: str):
+    def __init__(self, original_url: str, time: datetime.datetime, page_path: str,
+                 response: str) -> None:
         self.original_url = original_url  #: The live URL this is a snapshot of.
         self.time = time                  #: The time the snapshot was taken.
         self.page_path = page_path        #: Path to the page in the WBM.
+        self.response = response          #: HTTP status code at crawl time
 
         #: Timestamp as a string, as used within the WBM to identify the snapshot.
         self.raw_timestamp = self.time.strftime(r'%Y%m%d%H%M%S')
 
     def __repr__(self) -> str:
         return (f"<WaybackSnapshot [{self.page_path}] @[{self.raw_timestamp}] "
-                f"path={self.page_path}>")
+                f"path={self.page_path} code={self.response}>")
 
     @classmethod
     def from_api_return(cls, original_url: str, data_row: Tuple) -> 'WaybackSnapshot':
         "Generate a Snapshot object from the return of the CDX API."
-        timestamp, page_path = data_row[1:3]
+        timestamp, page_path, response = data_row
         dt = datetime.datetime.strptime(timestamp, r'%Y%m%d%H%M%S')
-        return cls(original_url, dt, page_path)
+        return cls(original_url, dt, page_path, response)
 
     @property
     def archived_url(self) -> str:
@@ -61,11 +63,14 @@ def get_snapshots(original_url: str) -> Sequence[WaybackSnapshot]:
     >>> isinstance(sn[0], WaybackSnapshot)
     True
     >>> sn[0]
-    <WaybackSnapshot [https://controlaltbackspace.org/] @[20191220103606] path=https://controlaltbackspace.org/>
+    <WaybackSnapshot [https://controlaltbackspace.org/] @[20191220103606] path=https://controlaltbackspace.org/ code=200>
     """
-
-    result = requests.get(CDX_SEARCH_ENDPOINT,
-                          params={'url': original_url, 'output': 'json'})
+    params = {
+        'url': original_url,
+        'output': 'json',
+        'fl': "timestamp,original,statuscode"
+    }
+    result = requests.get(CDX_SEARCH_ENDPOINT, params=params)
     result.raise_for_status()
 
     # If no results, .json() may raise ValueError or just return None.
