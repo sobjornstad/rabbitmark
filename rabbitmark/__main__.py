@@ -43,12 +43,12 @@ class MainWindow(QMainWindow):
         # set up actions
         sf = self.form
         sf.action_Quit.triggered.connect(self.quit)
-        sf.actionDelete.triggered.connect(self.deleteCurrent)
+        sf.actionDelete.triggered.connect(self.onDeleteBookmark)
         sf.actionNew.triggered.connect(self.onAddBookmark)
         sf.actionNew_from_clipboard.triggered.connect(
             self.onAddBookmarkFromClipboard)
-        sf.actionCopyUrl.triggered.connect(self.copyUrl)
-        sf.actionBrowseToUrl.triggered.connect(self.openUrl)
+        sf.actionCopyUrl.triggered.connect(self.onCopyUrl)
+        sf.actionBrowseToUrl.triggered.connect(self.onBrowseForUrl)
 
         sf.actionRenameTag.triggered.connect(self.onRenameTag)
         sf.actionDeleteTag.triggered.connect(self.onDeleteTag)
@@ -69,7 +69,7 @@ class MainWindow(QMainWindow):
         # Indexes of these options should match with utils.SearchMode.
         sf.tagsModeDropdown.addItem("Require at least one selected tag (OR)")
         sf.tagsModeDropdown.addItem("Require all selected tags (AND)")
-        sf.tagsModeDropdown.activated.connect(self.doUpdateForSearch)
+        sf.tagsModeDropdown.activated.connect(self._updateForSearch)
 
         # set up data table
         self.tableView = self.form.bookmarkTable
@@ -87,110 +87,18 @@ class MainWindow(QMainWindow):
         # set up details form
         self.detailsForm = BookmarkDetailsWidget()
         self.detailsForm.setupUi(self.form.detailsWidget)
-        self.detailsForm.copyUrlButton.clicked.connect(self.copyUrl)
-        self.detailsForm.browseUrlButton.clicked.connect(self.openUrl)
+        self.detailsForm.copyUrlButton.clicked.connect(self.onCopyUrl)
+        self.detailsForm.browseUrlButton.clicked.connect(self.onBrowseForUrl)
 
         # set up re-search triggers and update for the first time
-        self.form.searchBox.textChanged.connect(self.doUpdateForSearch)
-        self.form.tagList.itemSelectionChanged.connect(self.doUpdateForSearch)
-        self.doUpdateForSearch()
+        self.form.searchBox.textChanged.connect(self._updateForSearch)
+        self.form.tagList.itemSelectionChanged.connect(self._updateForSearch)
+        self._updateForSearch()
 
+
+    ### Helper methods ###
     def _currentSearchMode(self) -> utils.SearchMode:
         return utils.SearchMode(self.form.tagsModeDropdown.currentIndex())
-
-    #pylint: disable=unused-argument
-    def closeEvent(self, evt) -> NoReturn:
-        "Catch click of the X button, etc., and properly quit."
-        self.quit()
-
-    def quit(self) -> NoReturn:
-        "Clean up and quit RabbitMark."
-        # fake changing focus: the widget name for new is arbitrary,
-        # one of the editable boxes is required for old
-        self.maybeSaveBookmark(old=self.detailsForm.nameBox,
-                               new=self.detailsForm.nameBox)
-        # false positive
-        # pylint: disable=no-member
-        self.session.commit()
-        self.session.close()
-        sys.exit(0)
-
-    def onTogglePrivate(self) -> None:
-        """
-        Choose whether to hide or show private bookmarks and tags. A tag is
-        considered private if it has no member bookmarks which are not private.
-        """
-        self.showPrivates = not self.showPrivates
-        self.doUpdateForSearch()
-        self.resetTagList()
-
-    def onAddBookmarkFromClipboard(self) -> None:
-        "Create a new bookmark from the URL on the clipboard."
-        pastedUrl = str(QApplication.clipboard().text()).strip()
-        if '://' not in pastedUrl:
-            utils.warningBox("No protocol (e.g., http://) in URL. Adding "
-                             "http:// to beginning. You may wish to check "
-                             "the URL.", "URL possibly invalid")
-            pastedUrl = 'http://' + pastedUrl
-        self._newBookmark(pastedUrl)
-
-    def onAddBookmark(self) -> None:
-        "Create a new bookmark without a given URL."
-        self._newBookmark("http://")
-
-    def _newBookmark(self, url) -> None:
-        "Common portion of creating a new bookmark."
-        # Create the new item with any tags that are selected.
-        tags = [str(i.text())
-                for i in self.form.tagList.selectedItems()
-                if str(i.text()) != utils.NOTAGS]
-
-        # Full-text filter is automatically cleared on add -- otherwise, the new
-        # item won't be visible!
-        self.form.searchBox.setText("")
-        self.doUpdateForSearch()
-        # If in AND mode, turn off "no tags" mode, or it similarly won't be visible.
-        if self._currentSearchMode() == utils.SearchMode.And:
-            self.form.tagList.item(0).setSelected(False)
-
-        newBookmark = bookmark.add_bookmark(self.session, url, tags)
-        self.session.commit()  # pylint: disable=no-member
-
-        self.doUpdateForSearch()
-        index = self.tableModel.indexFromPk(newBookmark.id)
-        if index is not None:
-            self.tableView.setCurrentIndex(index)
-            self.detailsForm.nameBox.setFocus()
-
-    def deleteCurrent(self) -> None:
-        "Delete the selected bookmark."
-        if not self.sm.hasSelection():
-            utils.errorBox("Please select a bookmark to delete.",
-                           "No bookmark selected")
-            return
-        curIndex = self.tableView.currentIndex()
-        nextRow = self.tableModel.nextAfterDelete(curIndex)
-
-        mark = self.tableModel.getObj(curIndex)
-        bookmark.delete_bookmark(self.session, mark)
-        self.session.commit()  # pylint: disable=no-member
-
-        self.tableModel.updateAfterDelete(curIndex)
-        self.resetTagList()
-        self.tableView.setCurrentIndex(nextRow)
-
-    def copyUrl(self) -> None:
-        QApplication.clipboard().setText(self.detailsForm.urlBox.text())
-    def openUrl(self) -> None:
-        QDesktopServices.openUrl(QUrl(self.detailsForm.urlBox.text()))
-
-    def onWayBackMachine(self) -> None:
-        "Find a snapshot of the item's URL in the WayBackMachine."
-        mark = self.tableModel.getObj(self.tableView.currentIndex())
-        archiveUrl = wayback_search_dialog.init_wayback_search(self, mark.url)
-        if archiveUrl is not None:
-            self.detailsForm.urlBox.setText(archiveUrl)
-            self.maybeSaveBookmark(self.detailsForm.urlBox, None)
 
     def _getSingleTagName(self) -> Optional[str]:
         """
@@ -218,59 +126,56 @@ class MainWindow(QMainWindow):
 
         return tags[0]
 
-    def onRenameTag(self) -> None:
-        "Rename the selected tag."
-        tag = self._getSingleTagName()
-        if tag is None:
-            return
+    def _newBookmark(self, url) -> None:
+        "Common portion of creating a new bookmark."
+        # Create the new item with any tags that are selected.
+        tags = [str(i.text())
+                for i in self.form.tagList.selectedItems()
+                if str(i.text()) != utils.NOTAGS]
 
-        new, doContinue = utils.inputBox("New name for tag:", "Rename tag", tag)
-        if doContinue:
-            if tag_ops.rename_tag(self.session, tag, new):
-                self.session.commit()  # pylint: disable=no-member
-                self.resetTagList()
-                self.fillEditPane()
-            else:
-                utils.errorBox("A tag by that name already exists.",
-                               "Cannot rename tag")
+        # Full-text filter is automatically cleared on add -- otherwise, the new
+        # item won't be visible!
+        self.form.searchBox.setText("")
+        self._updateForSearch()
+        # If in AND mode, turn off "no tags" mode, or it similarly won't be visible.
+        if self._currentSearchMode() == utils.SearchMode.And:
+            self.form.tagList.item(0).setSelected(False)
 
-            # select the newly renamed tag
-            self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
+        newBookmark = bookmark.add_bookmark(self.session, url, tags)
+        self.session.commit()  # pylint: disable=no-member
 
-    def onDeleteTag(self) -> None:
-        "Delete the selected tag."
-        tag = self._getSingleTagName()
-        if tag is None:
-            return
+        self._updateForSearch()
+        index = self.tableModel.indexFromPk(newBookmark.id)
+        if index is not None:
+            self.tableView.setCurrentIndex(index)
+            self.detailsForm.nameBox.setFocus()
 
-        r = utils.questionBox(
-            f"This will permanently delete the tag '{tag}' from all of your bookmarks. "
-            f"Are you sure you want to continue?",
-            "Delete tag?")
-        if r == QMessageBox.Yes:
-            tag_ops.delete_tag(self.session, tag)
-            self.session.commit()  # pylint: disable=no-member
-            self.resetTagList()
-            self.fillEditPane()
-
-    def onMergeTag(self) -> None:
-        "Merge the selected tag into another."
-        tag = self._getSingleTagName()
-        if tag is None:
-            return
-
-        new, doContinue = utils.inputBox(f"Merge tag '{tag}' into:", "Merge tag")
-        if doContinue:
-            if tag_ops.merge_tags(self.session, tag, new):
-                self.session.commit()  # pylint: disable=no-member
-                self.resetTagList()
-                self.fillEditPane()
-            # select the tag we merged into
-            self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
-
-    def resetTagList(self) -> None:
+    def _reselectItem(self, item=None) -> None:
         """
-        Update the tag list widget to match the current state of the db.
+        Select the given /item/ if it still exists in the view, or the first
+        item in the view if it doesn't or /item/ is None.
+
+        This method should be called after updating the table view using a
+        resetModel() command, as that causes the loss of the current selection.
+
+        Arguments:
+            item (default None) - if not None, attempt to select the item by
+                this primary key.
+        """
+        if item is None:
+            idx = self.tableModel.index(0, 0)
+        else:
+            idx = self.tableModel.indexFromPk(item)
+            if idx is None: # provided item isn't in this view
+                idx = self.tableModel.index(0, 0)
+
+        self.tableView.setCurrentIndex(idx)
+        self.fillEditPane()
+
+    def _resetTagList(self) -> None:
+        """
+        Update the tag list widget to match the current state of the database.
+        Need to call after anything that might add or remove tags.
         """
         # Get updated tag list.
         self.tags = tag_ops.scan_tags(self.session, self.showPrivates)
@@ -288,20 +193,57 @@ class MainWindow(QMainWindow):
                 self.form.tagList.addItem(i)
         self.form.tagList.sortItems()
 
-    def onCheckBrokenLinks(self) -> None:
-        "Scan the database for broken links and help the user correct them."
-        obtain_dlg = link_check_dialog.LinkCheckProgressDialog(self, self.Session)
-        obtain_dlg.start()
-        obtain_dlg.exec_()
-        blinks = obtain_dlg.blinks
+    def _updateTitleCount(self, count) -> None:
+        """
+        Change the count of matching items that appears in the title bar to
+        /count/.
+        """
+        self.setWindowTitle("RabbitMark - %i match%s" % (
+            count, '' if count == 1 else 'es'))
 
-        if blinks:
-            fix_dlg = link_check_dialog.LinkCheckDialog(self, blinks, self.session)
-            fix_dlg.exec_()
+    def _updateForSearch(self) -> None:
+        """
+        Update the bookmarks table to match the filter and tag selection.
 
-            # Since we could have edited things within the dialog, we need to resync.
-            self.doUpdateForSearch()
-            self.resetTagList()
+        We determine and pass the text in the filter box and a list of the tags
+        selected, and we restore the selection to the currently selected
+        bookmark after the view is refreshed if that bookmark is still in the
+        new view.
+        """
+        selectedTags = [str(i.text())
+                        for i in self.form.tagList.selectedItems()]
+        mark = self.tableModel.getObj(self.tableView.currentIndex())
+        oldId = None if mark is None else mark.id
+        searchMode = self._currentSearchMode()
+
+        nameText = "%" + self.form.searchBox.text() + "%"
+        marks = bookmark.find_bookmarks(self.session, nameText, selectedTags,
+                                        self.showPrivates, searchMode)
+        self.tableModel.updateContents(marks)
+        self._reselectItem(oldId)
+        self._updateTitleCount(self.tableModel.rowCount(self))
+
+
+    ### Evil in-betweens. Called from events and from other methods. ###
+    def fillEditPane(self) -> None:
+        "Fill the editor/details pane with data from the currently selected bookmark."
+        sfdw = self.detailsForm
+        mark = self.tableModel.getObj(self.tableView.currentIndex())
+        if not self.sm.selectedRows():
+            # nothing selected; hide editor pane
+            self.form.splitter.widget(1).setVisible(False)
+        else:
+            self.form.splitter.widget(1).setVisible(True)
+            sfdw.nameBox.setText(mark.name)
+            sfdw.urlBox.setText(mark.url)
+            sfdw.descriptionBox.setPlainText(mark.description)
+            sfdw.privateCheck.setChecked(mark.private)
+            tags = ', '.join([i.text for i in mark.tags])
+            sfdw.tagsBox.setText(tags)
+            # If a name or URL is too long to fit in the box, this will make
+            # the box show the beginning of it rather than the end.
+            for i in (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox):
+                i.setCursorPosition(0)
 
     def maybeSaveBookmark(self, old, new) -> None:
         """
@@ -327,75 +269,8 @@ class MainWindow(QMainWindow):
                 return # nothing is selected
             if bookmark.save_if_edited(self.session, mark, utils.mark_dictionary(sfdw)):
                 self.session.commit()  # pylint: disable=no-member
-                self.resetTagList()
-            self.doUpdateForSearch()
-
-    def doUpdateForSearch(self) -> None:
-        """
-        Call tableModel.updateForSearch() to bring the contents of the
-        bookmarks table into sync with the filter and tag selection.
-
-        We determine and pass the text in the filter box and a list of the tags
-        selected, and we restore the selection to the currently selected
-        bookmark after the view is refreshed if that bookmark is still in the
-        new view.
-
-        No arguments, no return.
-        """
-        selectedTags = [str(i.text())
-                        for i in self.form.tagList.selectedItems()]
-        mark = self.tableModel.getObj(self.tableView.currentIndex())
-        oldId = None if mark is None else mark.id
-        searchMode = self._currentSearchMode()
-
-        nameText = "%" + self.form.searchBox.text() + "%"
-        marks = bookmark.find_bookmarks(self.session, nameText, selectedTags,
-                                        self.showPrivates, searchMode)
-        self.tableModel.updateContents(marks)
-        self.reselectItem(oldId)
-        self.updateTitleCount(self.tableModel.rowCount(self))
-
-    def reselectItem(self, item=None) -> None:
-        """
-        Select the given /item/ if it still exists in the view, or the first
-        item in the view if it doesn't or /item/ is None.
-
-        This method should to be called after updating the table view using a
-        resetModel() command, as that causes the loss of the current selection.
-
-        Arguments:
-            item (default None) - if not None, attempt to select the item by
-                this primary key.
-        """
-        if item is None:
-            idx = self.tableModel.index(0, 0)
-        else:
-            idx = self.tableModel.indexFromPk(item)
-            if idx is None: # provided item isn't in this view
-                idx = self.tableModel.index(0, 0)
-
-        self.tableView.setCurrentIndex(idx)
-        self.fillEditPane()
-
-    def fillEditPane(self) -> None:
-        "Fill the editor/details pane with data from the currently selected bookmark."
-        sfdw = self.detailsForm
-        mark = self.tableModel.getObj(self.tableView.currentIndex())
-        if not self.sm.selectedRows():
-            # nothing selected; hide editor pane
-            self.form.splitter.widget(1).setVisible(False)
-        else:
-            self.form.splitter.widget(1).setVisible(True)
-            sfdw.nameBox.setText(mark.name)
-            sfdw.urlBox.setText(mark.url)
-            sfdw.descriptionBox.setPlainText(mark.description)
-            sfdw.privateCheck.setChecked(mark.private)
-            tags = ', '.join([i.text for i in mark.tags])
-            sfdw.tagsBox.setText(tags)
-            # If a name or URL is too long to fit in the box, this will make
-            # the box show the beginning of it rather than the end.
-            for i in (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox):
-                i.setCursorPosition(0)
+                self._resetTagList()
+            self._updateForSearch()
 
     def tagsSelect(self, what) -> None:
         "Select tags en masse using the convenience buttons at the bottom."
@@ -415,13 +290,148 @@ class MainWindow(QMainWindow):
         self.form.tagList.blockSignals(oldSigs)
         self.form.tagList.itemSelectionChanged.emit()
 
-    def updateTitleCount(self, count) -> None:
+
+    ### Event handlers ###
+    # Bookmarks
+    def onAddBookmark(self) -> None:
+        "Create a new bookmark without a given URL."
+        self._newBookmark("http://")
+
+    def onAddBookmarkFromClipboard(self) -> None:
+        "Create a new bookmark from the URL on the clipboard."
+        pastedUrl = str(QApplication.clipboard().text()).strip()
+        if '://' not in pastedUrl:
+            utils.warningBox("No protocol (e.g., http://) in URL. Adding "
+                             "http:// to beginning. You may wish to check "
+                             "the URL.", "URL possibly invalid")
+            pastedUrl = 'http://' + pastedUrl
+        self._newBookmark(pastedUrl)
+
+    def onBrowseForUrl(self) -> None:
+        QDesktopServices.openUrl(QUrl(self.detailsForm.urlBox.text()))
+
+    def onCopyUrl(self) -> None:
+        QApplication.clipboard().setText(self.detailsForm.urlBox.text())
+
+    def onDeleteBookmark(self) -> None:
+        "Delete the selected bookmark."
+        if not self.sm.hasSelection():
+            utils.errorBox("Please select a bookmark to delete.",
+                           "No bookmark selected")
+            return
+        curIndex = self.tableView.currentIndex()
+        nextRow = self.tableModel.nextAfterDelete(curIndex)
+
+        mark = self.tableModel.getObj(curIndex)
+        bookmark.delete_bookmark(self.session, mark)
+        self.session.commit()  # pylint: disable=no-member
+
+        self.tableModel.updateAfterDelete(curIndex)
+        self._resetTagList()
+        self.tableView.setCurrentIndex(nextRow)
+
+    def onWayBackMachine(self) -> None:
+        "Find a snapshot of the item's URL in the WayBackMachine."
+        mark = self.tableModel.getObj(self.tableView.currentIndex())
+        archiveUrl = wayback_search_dialog.init_wayback_search(self, mark.url)
+        if archiveUrl is not None:
+            self.detailsForm.urlBox.setText(archiveUrl)
+            self.maybeSaveBookmark(self.detailsForm.urlBox, None)
+
+    # Tags
+    def onDeleteTag(self) -> None:
+        "Delete the selected tag."
+        tag = self._getSingleTagName()
+        if tag is None:
+            return
+
+        r = utils.questionBox(
+            f"This will permanently delete the tag '{tag}' from all of your bookmarks. "
+            f"Are you sure you want to continue?",
+            "Delete tag?")
+        if r == QMessageBox.Yes:
+            tag_ops.delete_tag(self.session, tag)
+            self.session.commit()  # pylint: disable=no-member
+            self._resetTagList()
+            self.fillEditPane()
+
+    def onMergeTag(self) -> None:
+        "Merge the selected tag into another."
+        tag = self._getSingleTagName()
+        if tag is None:
+            return
+
+        new, doContinue = utils.inputBox(f"Merge tag '{tag}' into:", "Merge tag")
+        if doContinue:
+            if tag_ops.merge_tags(self.session, tag, new):
+                self.session.commit()  # pylint: disable=no-member
+                self._resetTagList()
+                self.fillEditPane()
+            # select the tag we merged into
+            self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
+
+    def onRenameTag(self) -> None:
+        "Rename the selected tag."
+        tag = self._getSingleTagName()
+        if tag is None:
+            return
+
+        new, doContinue = utils.inputBox("New name for tag:", "Rename tag", tag)
+        if doContinue:
+            if tag_ops.rename_tag(self.session, tag, new):
+                self.session.commit()  # pylint: disable=no-member
+                self._resetTagList()
+                self.fillEditPane()
+            else:
+                utils.errorBox("A tag by that name already exists.",
+                               "Cannot rename tag")
+
+            # select the newly renamed tag
+            self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
+
+    # Entire view
+    def onCheckBrokenLinks(self) -> None:
+        "Scan the database for broken links and help the user correct them."
+        obtain_dlg = link_check_dialog.LinkCheckProgressDialog(self, self.Session)
+        obtain_dlg.start()
+        obtain_dlg.exec_()
+        blinks = obtain_dlg.blinks
+
+        if blinks:
+            fix_dlg = link_check_dialog.LinkCheckDialog(self, blinks, self.session)
+            fix_dlg.exec_()
+
+            # Since we could have edited things within the dialog, we need to resync.
+            self._updateForSearch()
+            self._resetTagList()
+
+    def onTogglePrivate(self) -> None:
         """
-        Change the count of matching items that appears in the title bar to
-        /count/.
+        Choose whether to hide or show private bookmarks and tags. A tag is
+        considered private if it has no member bookmarks which are not private.
         """
-        self.setWindowTitle("RabbitMark - %i match%s" % (
-            count, '' if count == 1 else 'es'))
+        self.showPrivates = not self.showPrivates
+        self._updateForSearch()
+        self._resetTagList()
+
+    # Named by convention.
+    #pylint: disable=unused-argument
+    def closeEvent(self, evt) -> NoReturn:
+        "Catch click of the X button, etc., and properly quit."
+        self.quit()
+
+    def quit(self) -> NoReturn:
+        "Clean up and quit RabbitMark."
+        # fake changing focus: the widget name for new is arbitrary,
+        # one of the editable boxes is required for old
+        self.maybeSaveBookmark(old=self.detailsForm.nameBox,
+                               new=self.detailsForm.nameBox)
+        # Double-check we don't have any uncommitted changes.
+        # false positive
+        # pylint: disable=no-member
+        self.session.commit()
+        self.session.close()
+        sys.exit(0)
 
 
 def make_Session() -> SessionType:
