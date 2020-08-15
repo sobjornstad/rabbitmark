@@ -9,7 +9,7 @@ main.py -- RabbitMark Qt application
 
 import re
 import sys
-from typing import Any, Dict, NoReturn
+from typing import Any, Dict, NoReturn, Optional
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication, QMainWindow, \
@@ -195,21 +195,31 @@ class MainWindow(QMainWindow):
             self.detailsForm.urlBox.setText(archiveUrl)
             self.maybeSaveBookmark(self.detailsForm.urlBox, None)
 
-    def onRenameTag(self) -> None:
-        "Rename the selected tag."
+    def _getSingleTagName(self) -> Optional[str]:
+        """
+        Return the name of the single tag currently selected, or display an error
+        message and return None if there is not exactly one tag selected.
+        """
         tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()]
 
         if len(tags) < 1:
-            utils.errorBox("Please select a tag to rename.",
-                           "No tag selected")
-            return
+            utils.errorBox("Please select a tag.", "No tag selected")
+            return None
         elif len(tags) > 1:
-            utils.errorBox("Tags cannot be renamed in bulk. Please select"
-                           "exactly one tag.", "Cannot rename multiple tags")
+            utils.errorBox(
+                "Tags cannot be edited in bulk. Please select exactly one tag.",
+                "Cannot rename multiple tags")
+            return None
+
+        return tags[0]
+
+    def onRenameTag(self) -> None:
+        "Rename the selected tag."
+        tag = self._getSingleTagName()
+        if tag is None:
             return
 
-        tag = tags[0]
         new, doContinue = utils.inputBox("New name for tag:",
                                          "Rename tag", tag)
         if doContinue:
@@ -220,23 +230,16 @@ class MainWindow(QMainWindow):
             else:
                 utils.errorBox("A tag by that name already exists.",
                                "Cannot rename tag")
-        self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
+
+            # select the newly renamed tag
+            self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
 
     def onDeleteTag(self) -> None:
         "Delete the selected tag."
-        tags = [str(i.text())
-                for i in self.form.tagList.selectedItems()]
-
-        if len(tags) < 1:
-            utils.errorBox("Please select a tag to delete.",
-                           "No tag selected")
-            return
-        elif len(tags) > 1:
-            utils.errorBox("Sorry, you currently cannot delete tags in bulk.",
-                           "Cannot delete multiple tags")
+        tag = self._getSingleTagName()
+        if tag is None:
             return
 
-        tag = tags[0]
         if tag == utils.NOTAGS:
             utils.errorBox("You cannot delete '%s'. It is not a tag; rather, "
                            "it indicates that you would like to search for "
@@ -255,25 +258,17 @@ class MainWindow(QMainWindow):
 
     def onMergeTag(self) -> None:
         "Merge the selected tag into another."
-        tags = [str(i.text())
-                for i in self.form.tagList.selectedItems()]
-
-        if len(tags) < 1:
-            utils.errorBox("Please select a tag to rename.",
-                           "No tag selected")
-            return
-        elif len(tags) > 1:
-            utils.errorBox("Tags cannot be renamed in bulk. Please select"
-                           "exactly one tag.", "Cannot rename multiple tags")
+        tag = self._getSingleTagName()
+        if tag is None:
             return
 
-        tag = tags[0]
         new, doContinue = utils.inputBox(f"Merge tag {tag} into:", "Merge tag")
         if doContinue:
             if tag_ops.merge_tags(self.session, tag, new):
                 self.session.commit()  # pylint: disable=no-member
                 self.resetTagList()
                 self.fillEditPane()
+            # select the tag we merged into
             self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
 
     def resetTagList(self) -> None:
