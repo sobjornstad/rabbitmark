@@ -7,14 +7,12 @@ main.py -- RabbitMark Qt application
 # All rights reserved (temporary; if you read this and want such, contact me
 # for relicensing under some FOSS license).
 
-import re
 import sys
-from typing import Any, Dict, NoReturn, Optional
+from typing import NoReturn, Optional
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QApplication, QMainWindow, \
-    QShortcut, QMessageBox
-from PyQt5.QtGui import QDesktopServices, QKeySequence, QCursor
+from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut, QMessageBox
+from PyQt5.QtGui import QDesktopServices, QKeySequence
 from PyQt5.QtCore import Qt, QUrl
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
@@ -24,7 +22,6 @@ from sqlalchemy.orm import Session as SessionType
 from .bookmark_table import BookmarkTableModel
 from .forms.main import Ui_MainWindow
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
-from .librm import broken_links
 from .librm import bookmark
 from .librm import tag as tag_ops
 from .librm.models import Base
@@ -292,6 +289,7 @@ class MainWindow(QMainWindow):
         self.form.tagList.sortItems()
 
     def onCheckBrokenLinks(self) -> None:
+        "Scan the database for broken links and help the user correct them."
         obtain_dlg = link_check_dialog.LinkCheckProgressDialog(self, self.Session)
         obtain_dlg.start()
         obtain_dlg.exec_()
@@ -300,7 +298,7 @@ class MainWindow(QMainWindow):
         if blinks:
             fix_dlg = link_check_dialog.LinkCheckDialog(self, blinks, self.session)
             fix_dlg.exec_()
-            
+
             # Since we could have edited things within the dialog, we need to resync.
             self.doUpdateForSearch()
             self.resetTagList()

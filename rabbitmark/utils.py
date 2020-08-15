@@ -96,6 +96,6 @@ def mark_dictionary(detailsForm) -> Dict[str, Any]:
         'description': str(detailsForm.descriptionBox.toPlainText()),
         'private': detailsForm.privateCheck.isChecked(),
         'tags': [i.strip() for i in
-                    str(detailsForm.tagsBox.text()).split(',')
-                    if i.strip() != ''],
+                 str(detailsForm.tagsBox.text()).split(',')
+                 if i.strip() != ''],
     }
