@@ -24,7 +24,7 @@ class Bookmark(Base):  # type: ignore
     __tablename__ = 'bookmarks'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, nullable=False, index=True, unique=True)
     url = Column(String, nullable=False)
     description = Column(String, nullable=False)
     tags = relationship("Tag",
@@ -44,7 +44,7 @@ class Tag(Base):  # type: ignore
     __tablename__ = 'tags'
 
     id = Column(Integer, primary_key=True)
-    text = Column(String)
+    text = Column(String, index=True, unique=True)
     bookmarks = relationship("Bookmark",
                              secondary=mark_tag_assoc,
                              back_populates="tags")

@@ -11,13 +11,24 @@ from .models import Bookmark, Tag
 from .tag import maybe_expunge_tag, change_tags
 
 
+def _uniquify_name(session, orig_name: str) -> str:
+    "Given the name of a bookmark, add numbers to the end until it's unique."
+    name = orig_name
+    next_number = 2
+    while (session.query(Bookmark).filter(Bookmark.name == name).one_or_none()
+           is not None):
+        name = orig_name + f" {next_number}"
+        next_number += 1
+    return name
+
+
 def add_bookmark(session, url: str, tags: Iterable[str]) -> Bookmark:
     """
     Add a new bookmark using the provided URL and tags, leaving other fields
     blank. Returns the new Bookmark object.
     """
-    bookmark = Bookmark(name="", url=url, description="", private=False,
-                        skip_linkcheck=False)
+    bookmark = Bookmark(name=_uniquify_name(session, "New Bookmark"),
+                        url=url, description="", private=False, skip_linkcheck=False)
     session.add(bookmark)
     for tag in tags:
         add_tag_to_bookmark(session, bookmark, tag)
@@ -74,7 +85,8 @@ def save_if_edited(session, existing_bookmark: Bookmark,
         return False
 
     if _dirty():
-        existing_bookmark.name = new_content['name']
+        if existing_bookmark.name != new_content['name']:
+            existing_bookmark.name = _uniquify_name(session, new_content['name'])
         existing_bookmark.description = new_content['description']
         existing_bookmark.url = new_content['url']
         existing_bookmark.private = new_content['private']

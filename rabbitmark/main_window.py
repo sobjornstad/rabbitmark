@@ -137,6 +137,7 @@ class MainWindow(QMainWindow):
         index = self.tableModel.indexFromPk(newBookmark.id)
         if index is not None:
             self.tableView.setCurrentIndex(index)
+            self.detailsForm.nameBox.selectAll()
             self.detailsForm.nameBox.setFocus()
 
     def _reselectItem(self, item=None) -> None:
