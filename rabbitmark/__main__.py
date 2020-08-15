@@ -211,6 +211,13 @@ class MainWindow(QMainWindow):
                 "Tags cannot be edited in bulk. Please select exactly one tag.",
                 "Cannot rename multiple tags")
             return None
+        elif tags[0] == utils.NOTAGS:
+            utils.errorBox(
+                f"You cannot edit '{utils.NOTAGS}'. It is not a tag; rather, "
+                f"it indicates that you would like to search for items that do not "
+                f"have any tags.",
+                "Item not editable")
+            return None
 
         return tags[0]
 
@@ -220,8 +227,7 @@ class MainWindow(QMainWindow):
         if tag is None:
             return
 
-        new, doContinue = utils.inputBox("New name for tag:",
-                                         "Rename tag", tag)
+        new, doContinue = utils.inputBox("New name for tag:", "Rename tag", tag)
         if doContinue:
             if tag_ops.rename_tag(self.session, tag, new):
                 self.session.commit()  # pylint: disable=no-member
@@ -240,16 +246,10 @@ class MainWindow(QMainWindow):
         if tag is None:
             return
 
-        if tag == utils.NOTAGS:
-            utils.errorBox("You cannot delete '%s'. It is not a tag; rather, "
-                           "it indicates that you would like to search for "
-                           "items that do not have any tags." % utils.NOTAGS,
-                           "Not deleteable")
-            return
-
-        r = utils.questionBox("This will permanently delete the tag '%s' from "
-                              "all of your bookmarks. Are you sure you want "
-                              "to continue?" % tag, "Delete tag?")
+        r = utils.questionBox(
+            f"This will permanently delete the tag '{tag}' from all of your bookmarks. "
+            f"Are you sure you want to continue?",
+            "Delete tag?")
         if r == QMessageBox.Yes:
             tag_ops.delete_tag(self.session, tag)
             self.session.commit()  # pylint: disable=no-member
@@ -262,7 +262,7 @@ class MainWindow(QMainWindow):
         if tag is None:
             return
 
-        new, doContinue = utils.inputBox(f"Merge tag {tag} into:", "Merge tag")
+        new, doContinue = utils.inputBox(f"Merge tag '{tag}' into:", "Merge tag")
         if doContinue:
             if tag_ops.merge_tags(self.session, tag, new):
                 self.session.commit()  # pylint: disable=no-member
