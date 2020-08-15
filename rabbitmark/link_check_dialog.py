@@ -2,17 +2,20 @@
 wayback_search_dialog.py -- interface for searching the WayBackMachine
 """
 
-from typing import Optional
+from typing import Optional, List
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtCore import QUrl
+from PyQt5.QtCore import pyqtSignal, QThread
 
 from .librm import bookmark
+from .librm import broken_links
+from .librm.broken_links import LinkCheck
 
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .forms.linkcheck import Ui_Dialog as Ui_LinkCheckDialog
+from .forms.linkcheck_progress import Ui_Dialog as Ui_LinkCheckProgressDialog
 from . import wayback_search_dialog
 from . import utils
 
@@ -146,3 +149,94 @@ class LinkCheckDialog(QDialog):
         _, mark = self._blinkAndMark()
         del self.blinks[mark.name]
         self.form.pageList.takeItem(self.form.pageList.currentRow())
+
+
+class LinkCheckThread(QThread):
+    """
+    Worker thread to scan for broken links.
+    """
+    progress_update = pyqtSignal(int, int, int, str)
+
+    def __init__(self, sessionmaker) -> None:
+        super().__init__()
+        self.blinks: List[LinkCheck] = []
+        self.link_success_count = 0
+        self.link_fail_count = 0
+        self.exception: Optional[Exception] = None
+        self.sessionmaker = sessionmaker
+
+    def run(self) -> None:
+        """
+        Create database session for this thread, then call into
+        broken_links.scan() using it. The callback for scan tracks progress
+        and reports it to the calling dialog and saves off any failures as
+        they occur where they can be collected at the end of the check.
+        """
+        def callback(at: int, tot: int, obj: LinkCheck) -> None:
+            if obj.successful:
+                self.link_success_count += 1
+            else:
+                self.blinks.append(obj)
+                self.link_fail_count += 1
+            assert at == self.link_fail_count + self.link_success_count
+
+            log_str = f"{at:03d}/{tot:03d} {obj}"
+            self.progress_update.emit(self.link_success_count,
+                                      self.link_fail_count, tot, log_str)
+
+        try:
+            session = self.sessionmaker()
+            broken_links.scan(session, callback, only_failures=False)
+            session.close()
+        except Exception as e:  # pylint: disable=broad-except
+            self.exception = e
+
+
+class LinkCheckProgressDialog(QDialog):
+    """
+    Prior to showing the LinkCheckDialog, we need to actually check the links
+    and compile a list of links that aren't working. This dialog shows progress
+    while performing those steps.
+    """
+    def __init__(self, parent, sessionmaker) -> None:
+        QDialog.__init__(self)
+        self.form = Ui_LinkCheckProgressDialog()
+        self.form.setupUi(self)
+        self.parent = parent
+        self.sessionmaker = sessionmaker
+
+        self.lct: Optional[LinkCheckThread] = None
+        self.blinks: List[LinkCheck] = []
+
+        self.form.cancelButton.clicked.connect(self.reject)
+
+    def start(self) -> None:
+        "Start a worker thread which coordinates scanning of the links."
+        self.lct = LinkCheckThread(self.sessionmaker)
+        self.lct.finished.connect(self.join_thread)
+        self.lct.progress_update.connect(self.update_progress)
+        self.lct.start()
+
+    def update_progress(self, success: int, fail: int, tot: int, log: str) -> None:
+        "Update the progress data. Called after every scan is completed."
+        self.form.okLabel.setText(f"OK: {success}")
+        self.form.failedLabel.setText(f"Failed: {fail}")
+        self.form.totalLabel.setText(f"Total: {tot}")
+        self.form.progressBar.setValue((success + fail) * 100 / tot)
+        self.form.progressLog.appendPlainText(log)
+
+    def join_thread(self) -> None:
+        """
+        Clean up when the worker thread terminates. Gather up the results,
+        raise any exceptions that might have occurred in the thread (none are
+        *supposed* to happen, but better to find out about them if they do!),
+        and transfer the list of failed links to the 'blinks' property where
+        the user of this dialog can grab them. Then accept the dialog.
+        """
+        assert self.lct is not None, "Tried to join a not-started thread!"
+        if self.lct.exception:
+            self.reject()
+            raise self.lct.exception
+
+        self.blinks = self.lct.blinks
+        self.accept()

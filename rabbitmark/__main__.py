@@ -297,18 +297,18 @@ class MainWindow(QMainWindow):
         self.form.tagList.sortItems()
 
     def onCheckBrokenLinks(self) -> None:
-        blinks = []
-        def callback(at: int, tot: int, obj: broken_links.LinkCheck):
-            print(f"{at:03d}/{tot:03d} {obj}")
-            blinks.append(obj)
+        obtain_dlg = link_check_dialog.LinkCheckProgressDialog(self, self.Session)
+        obtain_dlg.start()
+        obtain_dlg.exec_()
+        blinks = obtain_dlg.blinks
 
-        broken_links.scan(self.session, callback, only_failures=True)
-        dlg = link_check_dialog.LinkCheckDialog(self, blinks, self.session)
-        dlg.exec_()
-        
-        # Since we could have edited things within the dialog, we need to resync.
-        self.doUpdateForSearch()
-        self.resetTagList()
+        if blinks:
+            fix_dlg = link_check_dialog.LinkCheckDialog(self, blinks, self.session)
+            fix_dlg.exec_()
+            
+            # Since we could have edited things within the dialog, we need to resync.
+            self.doUpdateForSearch()
+            self.resetTagList()
 
     def maybeSaveBookmark(self, old, new) -> None:
         """
