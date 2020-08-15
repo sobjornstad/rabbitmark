@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>548</width>
+    <width>515</width>
     <height>395</height>
    </rect>
   </property>
@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>RabbitMark is sniffing through your database for link rot. This may take a few minutes.</string>
+      <string>RabbitMark is sniffing your database for link rot. This may take a few minutes.</string>
      </property>
     </widget>
    </item>
