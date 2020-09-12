@@ -16,6 +16,7 @@ from .forms.about import Ui_Dialog as AboutForm
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .librm import bookmark
 from .librm import interchange
+from .librm import pocket
 from .librm import tag as tag_ops
 from . import import_dialog
 from . import link_check_dialog
@@ -36,31 +37,38 @@ class MainWindow(QMainWindow):
         self.Session = sessionmaker
         self.session = self.Session()
 
-        # set up actions
         sf = self.form
-        sf.action_Quit.triggered.connect(self.quit)
+        # File menu
+        sf.actionShowPrivate.triggered.connect(self.onTogglePrivate)
+        self.showPrivates = False
         sf.actionExport_CSV.triggered.connect(self.onExportCsv)
         sf.actionImport_CSV.triggered.connect(self.onImportCsv)
+        sf.action_Quit.triggered.connect(self.quit)
 
-        sf.actionDelete.triggered.connect(self.onDeleteBookmark)
+        # Bookmark menu
         sf.actionNew.triggered.connect(self.onAddBookmark)
         sf.actionNew_from_clipboard.triggered.connect(
             self.onAddBookmarkFromClipboard)
+        sf.actionWayBack.triggered.connect(self.onWayBackMachine)
+        sf.actionDelete.triggered.connect(self.onDeleteBookmark)
         sf.actionCopyUrl.triggered.connect(self.onCopyUrl)
         sf.actionBrowseToUrl.triggered.connect(self.onBrowseForUrl)
 
+        # Tag menu
         sf.actionRenameTag.triggered.connect(self.onRenameTag)
         sf.actionDeleteTag.triggered.connect(self.onDeleteTag)
         sf.actionMergeTag.triggered.connect(self.onMergeTag)
-        sf.actionWayBack.triggered.connect(self.onWayBackMachine)
-        sf.actionShowPrivate.triggered.connect(self.onTogglePrivate)
-        sf.actionBrokenLinks.triggered.connect(self.onCheckBrokenLinks)
-        self.showPrivates = False
 
+        # Tools menu
+        sf.actionBrokenLinks.triggered.connect(self.onCheckBrokenLinks)
+        sf.actionSendToPocket.triggered.connect(self.onSendToPocket)
+
+        # Help menu
         sf.actionContents.triggered.connect(self.onHelpContents)
         sf.actionReportBug.triggered.connect(self.onReportBug)
         sf.actionAbout.triggered.connect(self.onAbout)
 
+        # Not found on menus
         sf.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         sf.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
         sf.tagsInvertButton.clicked.connect(lambda: self.tagsSelect('invert'))
@@ -388,6 +396,11 @@ class MainWindow(QMainWindow):
         if archiveUrl is not None:
             self.detailsForm.urlBox.setText(archiveUrl)
             self.maybeSaveBookmark(self.detailsForm.urlBox, None)
+
+    def onSendToPocket(self) -> None:
+        mark = self.tableModel.getObj(self.tableView.currentIndex())
+        pocket.add_url(pocket.PocketConfig(), mark, ["source_rabbitmark"])
+        utils.informationBox(f'Successfully added "{mark.name}" to Pocket.')
 
     # Tags
     def onDeleteTag(self) -> None:

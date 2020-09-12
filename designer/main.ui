@@ -250,6 +250,7 @@
     <addaction name="actionNew_from_clipboard"/>
     <addaction name="separator"/>
     <addaction name="actionWayBack"/>
+    <addaction name="actionSendToPocket"/>
     <addaction name="actionDelete"/>
     <addaction name="separator"/>
     <addaction name="actionCopyUrl"/>
@@ -448,6 +449,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="actionSendToPocket">
+   <property name="text">
+    <string>Send to &amp;Pocket...</string>
    </property>
   </action>
  </widget>
