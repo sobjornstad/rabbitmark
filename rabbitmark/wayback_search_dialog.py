@@ -90,8 +90,12 @@ class WayBackDialog(QDialog):
         current_item = self.sd[self.bs.index]
         snapshot_time = current_item.formatted_timestamp(utils.DATE_FORMAT)
         if re.match("[-45]", current_item.response):
+            if current_item.response == "-":
+                err = "Unspecified error"
+            else:
+                err = f"Error {current_item.response}"
             snapshot_response_code = (
-                f"\n** Error {current_item.response} at crawl time. "
+                f"\n** {err} at crawl time. "
                 f"This snapshot probably will not work. **")
         else:
             snapshot_response_code = ""
