@@ -419,10 +419,12 @@ class MainWindow(QMainWindow):
         self._resetTagList()
         
     def onHelpContents(self) -> None:
-        pass
+        # TODO: Update with real URL
+        QDesktopServices.openUrl(QUrl("https://google.com"))
 
     def onReportBug(self) -> None:
-        pass
+        # TODO: Update with real URL
+        QDesktopServices.openUrl(QUrl("https://yahoo.com"))
 
     def onAbout(self) -> None:
         class AboutWindow(QDialog):
