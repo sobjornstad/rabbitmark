@@ -21,6 +21,7 @@ from .librm import pocket
 from .librm import tag as tag_ops
 from .librm.wayback_snapshot import request_snapshot
 from . import import_dialog
+from . import pocket_import_dialog
 from . import link_check_dialog
 from . import wayback_search_dialog
 from . import utils
@@ -514,7 +515,9 @@ class MainWindow(QMainWindow):
             self._resetTagList()
 
     def onImportFromPocket(self) -> None:
-        pocket.sync_items(self.session, pocket.PocketConfig(self.session), "reference")
+        dlg = pocket_import_dialog.PocketImportDialog(self, self.session)
+        dlg.exec_()
+        #pocket.sync_items(self.session, pocket.PocketConfig(self.session), "reference")
 
     def onTogglePrivate(self) -> None:
         """

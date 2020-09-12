@@ -110,8 +110,17 @@ def add_url(pconf: PocketConfig, mark: Bookmark,
         )[1:]
 
 
-def sync_items(session, pconf: PocketConfig, tag: str = None,
-               favorite: bool = False) -> int:
+def sync_items(
+    session,
+    pconf: PocketConfig,
+    get_only_tag: str = None,
+    get_only_favorites: bool = False,
+    get_only_since: bool = True,
+    use_excerpt: bool = False,
+    tag_with: str = None,
+    tag_passthru: bool = False,
+    discard_pocket_tags: str = None
+    ) -> int:
     if not pconf.valid():
         raise InvalidConfigurationError()
 
@@ -121,13 +130,14 @@ def sync_items(session, pconf: PocketConfig, tag: str = None,
         "state": "all",  # not just unread
         "detailType": "complete",  # otherwise no tags
     }
-    if favorite:
+    if get_only_favorites:
         params['favorite'] = 1
-    if tag is not None:
-        params['tag'] = tag
-    since = config.get(session, "pocket_since")
-    if since is not None:
-        params['since'] = since
+    if get_only_tag is not None:
+        params['tag'] = get_only_tag
+    if get_only_since:
+        since = config.get(session, "pocket_since")
+        if since is not None:
+            params['since'] = since
 
     my_json = json.dumps(params)
     my_headers = {
@@ -142,13 +152,26 @@ def sync_items(session, pconf: PocketConfig, tag: str = None,
 
     if successful:
         response = r.json()
-        #from pprint import pprint; pprint(response)
+        articles = []
+        print(response)
         for site in response['list'].values():
-            print(site['resolved_title'])
-            print(site['resolved_url'])
-            print(site['excerpt'])
-            print(', '.join(list(site['tags'].keys())))
+            pocket_tags = set(site['tags'].keys())
+            rabbitmark_tags = []
+            if tag_with:
+                rabbitmark_tags.append(tag_with)
+            if tag_passthru:
+                if discard_pocket_tags:
+                    pocket_discard_set = set(
+                        i.strip() for i in discard_pocket_tags.split(','))
+                    rabbitmark_tags.extend(pocket_tags.difference(pocket_discard_set))
+                else:
+                    rabbitmark_tags.extend(pocket_tags)
+
+            articles.append({
+                "title": site['resolved_title'],
+                "url": site['resolved_url'],
+                "description": site['excerpt'] if use_excerpt else "",
+                "tags": rabbitmark_tags,
+            })
         #config.put(session, "pocket_since", response['since'])
-
-
-    return 0
+        return articles
