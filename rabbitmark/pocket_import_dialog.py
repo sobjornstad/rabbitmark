@@ -6,18 +6,20 @@ from typing import Optional, List
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication, QDialog
-from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtCore import pyqtSignal, QThread, QUrl
+from PyQt5.QtGui import QDesktopServices, QCursor
+from PyQt5.QtCore import pyqtSignal, QThread, QUrl, Qt
 
 from .librm import bookmark
 from .librm import config
 from .librm import pocket
 
+from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .forms.pocket_import import Ui_Dialog as Ui_PocketImportDialog
+from .forms.pocket_preview import Ui_Dialog as Ui_PocketPreviewDialog
 from . import utils
 
 
-class PocketImportDialog(QDialog):
+class PocketSettingsDialog(QDialog):
     """
     Choose settings for importing from Pocket.
     """
@@ -143,18 +145,145 @@ class PocketImportDialog(QDialog):
 
     def accept(self):
         self._save_fields()
-        new_items = pocket.sync_items(
-            session=self.session,
-            pconf=pocket.PocketConfig(self.session),
-            get_only_tag = self.form.includeTagBox.text(),
-            get_only_favorites=self.form.includeFavoritesCheck.isChecked(),
-            get_only_since=self.form.incrementalSyncCheck.isChecked(),
-            use_excerpt=self.form.copyExcerptCheck.isChecked(),
-            tag_with=self.form.tagImportsBox.text(),
-            tag_passthru=self.form.copyTagsCheck.isChecked(),
-            discard_pocket_tags=self.form.discardTagsBox.text(),
-        )
-        from pprint import pprint; pprint(new_items)
-        #TODO: Do something
-        print("Accepted the dialog")
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+        try:
+            success, result = pocket.sync_items(
+                session=self.session,
+                pconf=pocket.PocketConfig(self.session),
+                get_only_tag = self.form.includeTagBox.text(),
+                get_only_favorites=self.form.includeFavoritesCheck.isChecked(),
+                get_only_since=self.form.incrementalSyncCheck.isChecked(),
+                use_excerpt=self.form.copyExcerptCheck.isChecked(),
+                tag_with=self.form.tagImportsBox.text(),
+                tag_passthru=self.form.copyTagsCheck.isChecked(),
+                discard_pocket_tags=self.form.discardTagsBox.text(),
+            )
+            if success:
+                self.items = result
+            else:
+                utils.errorBox(result, title="Error syncing with Pocket.")
+        finally:
+            QApplication.restoreOverrideCursor()
+
+        if not self.items:
+            utils.warningBox("No matching articles found. "
+                             "Please try different criteria.")
+        else:
+            super().accept()
+
+
+
+class PocketArticleDialog(QDialog):
+    """
+    Select specific Pocket articles to import.
+    """
+    def __init__(self, parent, session, item_list) -> None:
+        "Set up the dialog."
+        QDialog.__init__(self)
+        self.form = Ui_PocketPreviewDialog()
+        self.form.setupUi(self)
+        self.parent = parent
+        self.session = session
+        self.items = {i['name']: i for i in item_list}
+        self.went_back = False
+
+        # set up details widget
+        self.detailsForm = BookmarkDetailsWidget()
+        self.detailsForm.setupUi(self.form.detailsWidget)
+        self.detailsForm.browseUrlButton.clicked.connect(self.onBrowseUrl)
+        self.detailsForm.copyUrlButton.clicked.connect(self.onCopyUrl)
+        sfdw = self.detailsForm
+        for i in (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox, sfdw.descriptionBox):
+            i.setReadOnly(True)
+        for i in (sfdw.privateCheck, sfdw.linkcheckCheck):
+            i.setEnabled(False)
+
+        self.form.importButton.clicked.connect(self.accept)
+        self.form.cancelButton.clicked.connect(self.reject)
+        self.form.backButton.clicked.connect(self.onBack)
+        self.form.importOneButton.clicked.connect(self.onImportOne)
+        self.form.importAllButton.clicked.connect(self.onImportAll)
+        self.form.skipOneButton.clicked.connect(self.onSkipOne)
+        self.form.skipAllButton.clicked.connect(self.onSkipAll)
+        self.form.importList.currentItemChanged.connect(self.onImportSelectChanged)
+
+        for item in self.items.values():
+            if bookmark.url_exists(self.session, item['url']):
+                self.form.skipList.addItem(item['name'])
+            else:
+                self.form.importList.addItem(item['name'])
+        if self.form.skipList.count():
+            ess = '' if self.form.skipList.count() == 1 else 's'
+            utils.informationBox(
+                f"{self.form.skipList.count()} item{ess} were placed on the skip list "
+                f"because you already have a bookmark with the same URL.")
+
+    def accept(self):
+        for list_item in self.form.importList.findItems('.*', Qt.MatchRegExp):
+            item = self.items[list_item.text()]
+            bookmark.add_bookmark(self.session, **item)
+        self.session.commit()
         super().accept()
+        utils.informationBox(f"{self.form.importList.count()} items imported.")
+
+    def onBack(self) -> None:
+        self.went_back = True
+        self.reject()
+
+    def onBrowseUrl(self) -> None:
+        QDesktopServices.openUrl(QUrl(self.detailsForm.urlBox.text()))
+
+    def onCopyUrl(self) -> None:
+        QApplication.clipboard().setText(self.detailsForm.urlBox.text())
+
+    def onImportOne(self) -> None:
+        item = self.form.skipList.takeItem(self.form.skipList.currentRow())
+        self.form.importList.addItem(item)
+
+    def onImportAll(self) -> None:
+        with utils.signalsBlocked(self.form.importList):
+            self.form.skipList.clear()
+            self.form.importList.clear()
+            self.form.importList.addItems(list(self.items.keys()))
+
+    def onSkipOne(self) -> None:
+        item = self.form.importList.takeItem(self.form.importList.currentRow())
+        self.form.skipList.addItem(item)
+
+    def onSkipAll(self) -> None:
+        with utils.signalsBlocked(self.form.importList):
+            self.form.importList.clear()
+            self.form.skipList.clear()
+            self.form.skipList.addItems(list(self.items.keys()))
+
+    def onImportSelectChanged(self, new, _previous) -> None:
+        sfdw = self.detailsForm
+        item = self.items[new.text()]
+        sfdw.nameBox.setText(item['name'])
+        sfdw.urlBox.setText(item['url'])
+        sfdw.descriptionBox.setPlainText(item['description'])
+        tags = ', '.join(item['tags'])
+        sfdw.tagsBox.setText(tags)
+
+        # If a name or URL is too long to fit in the box, this will make
+        # the box show the beginning of it rather than the end.
+        for i in (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox):
+            i.setCursorPosition(0)
+
+
+def import_process(parent) -> bool:
+    """
+    Walk user through the process of importing with a two-step wizard.
+    """
+    dlg = PocketSettingsDialog(parent, parent.session)
+    if not dlg.exec_():
+        return False
+    items = dlg.items
+
+    dlg = PocketArticleDialog(parent, parent.session, items)
+    if not dlg.exec_():
+        if dlg.went_back:
+            # try again from the start
+            return import_process(parent)
+
+    return True

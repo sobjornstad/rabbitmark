@@ -140,7 +140,6 @@ class LinkCheckDialog(QDialog):
         _, mark = self._blinkAndMark()
         new_url = wayback_search_dialog.init_wayback_search(self, mark.url)
         if new_url is not None:
-            # TODO: Need to set the actual bookmark -- figure out how to save
             self.detailsForm.urlBox.setText(new_url)
             self.detailsForm.urlBox.setFocus()
 

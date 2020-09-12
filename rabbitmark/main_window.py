@@ -515,9 +515,9 @@ class MainWindow(QMainWindow):
             self._resetTagList()
 
     def onImportFromPocket(self) -> None:
-        dlg = pocket_import_dialog.PocketImportDialog(self, self.session)
-        dlg.exec_()
-        #pocket.sync_items(self.session, pocket.PocketConfig(self.session), "reference")
+        if pocket_import_dialog.import_process(self):
+            self._updateForSearch()
+            self._resetTagList()
 
     def onTogglePrivate(self) -> None:
         """

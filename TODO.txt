@@ -1,26 +1,23 @@
-Refactor/Bugfix:
-    * Clean up where committing and flushing is done
+Bugfixes:
+    * When deleting the last item in a view, RabbitMark should not crash
+    * Grey out menu items when they're not usable (esp. for Tags menu)
     * Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
-    * Grey out menu items when they're not usable (esp. Tags)
+
+Refactor:
+    * Clean up where committing and flushing is done
 
 Implement:
+    * Have a way to actually log in to Pocket, rather than having to manually run the OAuth flow and add the key in the database
     * New/Open (?). At any rate don't hard-code the database file
     * Help menu options (fix links)
-    * Note when WBM snapshot has been saved?
+    * CSV dupe detection should use URLs, not names.
 
 Possible ideas:
+    * Allow items in the Skip column of the Pocket import to be viewed in the preview pane.
+    * Allow editing items while importing from Pocket.
     * CLI interface
     * Frequency of tags; "Hapax legomena last" option
-    * TiddlyWiki syncing
-    * Retrieve items matching some tag from Pocket
+    * Sync with TiddlyWiki (ideally bidirectionally?)
     * Import/export could be improved
-
-Manual database upgrade steps:
-    - Dump the old DB:
-      sqlite3 sorenmarks-test.db_ .dump >dump.txt
-    - Remove CREATE TABLE and constraints
-    - Edit the bookmark insert statements to show the set of columns (not including tags) we're adding
-    - Add blanket UPDATE statements to fill default values in for the new columns
-    - Create fresh database by moving the file away and restarting RabbitMark
-    - Import into the new database:
-      sqlite3 sorenmarks-test.db <dump.txt
+    * Duplicate finding tool
+    * Save note that WBM snapshot has been taken to database?

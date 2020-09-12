@@ -44,7 +44,7 @@
       <item>
        <widget class="QCheckBox" name="incrementalSyncCheck">
         <property name="text">
-         <string>Include only &amp;items changed since the last sync</string>
+         <string>Include only &amp;items changed since the last successful import</string>
         </property>
        </widget>
       </item>
@@ -116,7 +116,7 @@
      <item>
       <widget class="QPushButton" name="importButton">
        <property name="text">
-        <string>&amp;Import</string>
+        <string>&amp;Next &gt;</string>
        </property>
       </widget>
      </item>

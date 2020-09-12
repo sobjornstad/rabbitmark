@@ -73,6 +73,16 @@ def name_exists(session, name: str) -> bool:
             is not None)
 
 
+def url_exists(session, url: str) -> bool:
+    """
+    Return True if a bookmark with the exact URL /url/ exists.
+    This is a fast, exact string match only and does not follow redirects,
+    uniquify URL encodings, etc.
+    """
+    return (session.query(Bookmark).filter(Bookmark.url == url).one_or_none()
+            is not None)
+
+
 def save_if_edited(session, existing_bookmark: Bookmark,
                    new_content: Dict[str, Any]) -> bool:
     """

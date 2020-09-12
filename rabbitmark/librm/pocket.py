@@ -3,7 +3,7 @@ pocket.py - integration with the Pocket read-it-later service
 """
 
 import json
-from typing import Callable, Iterable, Tuple
+from typing import Callable, Dict, Iterable, List, Tuple, Union
 
 import requests
 
@@ -119,8 +119,15 @@ def sync_items(
     use_excerpt: bool = False,
     tag_with: str = None,
     tag_passthru: bool = False,
-    discard_pocket_tags: str = None
-    ) -> int:
+    discard_pocket_tags: str = None) -> Tuple[bool, Union[List[Dict[str, str]], str]]:
+    """
+    Retrieve items from Pocket that match the provided criteria.
+
+    Return tuple:
+        [0] True if successful, False if failed.
+        [1] A list of dictionaries containing the relevant article data if successful,
+            or a string error message if failed.
+    """
     if not pconf.valid():
         raise InvalidConfigurationError()
 
@@ -144,34 +151,44 @@ def sync_items(
         "Content-Type": "application/json",
         "X-Accept": "application/json",
     }
-    print(my_json)
 
     r, successful, err = _wrap_request(
         lambda: requests.post(url=pconf.get_endpoint, data=my_json, headers=my_headers)
     )
+    if not successful:
+        return False, ""
 
-    if successful:
-        response = r.json()
-        articles = []
-        print(response)
-        for site in response['list'].values():
+    response = r.json()
+
+    # Bizarrely, returns an empty list if no results,
+    # or an _object_ mapping ids to result objects if there are results.
+    if not response['list']:
+        return True, []
+
+    articles = []
+    for site in response['list'].values():
+        if 'tags' in site:
             pocket_tags = set(site['tags'].keys())
-            rabbitmark_tags = []
-            if tag_with:
-                rabbitmark_tags.append(tag_with)
-            if tag_passthru:
-                if discard_pocket_tags:
-                    pocket_discard_set = set(
-                        i.strip() for i in discard_pocket_tags.split(','))
-                    rabbitmark_tags.extend(pocket_tags.difference(pocket_discard_set))
-                else:
-                    rabbitmark_tags.extend(pocket_tags)
+        else:
+            # Sometimes not present for no apparent reason
+            pocket_tags = set()
+        rabbitmark_tags = []
+        if tag_with:
+            rabbitmark_tags.append(tag_with)
+        if tag_passthru:
+            if discard_pocket_tags:
+                pocket_discard_set = set(
+                    i.strip() for i in discard_pocket_tags.split(','))
+                rabbitmark_tags.extend(pocket_tags.difference(pocket_discard_set))
+            else:
+                rabbitmark_tags.extend(pocket_tags)
 
-            articles.append({
-                "title": site['resolved_title'],
-                "url": site['resolved_url'],
-                "description": site['excerpt'] if use_excerpt else "",
-                "tags": rabbitmark_tags,
-            })
-        #config.put(session, "pocket_since", response['since'])
-        return articles
+        articles.append({
+            "name": site['resolved_title'] or site['given_title'],
+            "url": site['resolved_url'],
+            "description": site['excerpt'] if use_excerpt else "",
+            "tags": rabbitmark_tags,
+        })
+
+    config.put(session, "pocket_since", response['since'])
+    return True, articles

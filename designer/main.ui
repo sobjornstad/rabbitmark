@@ -473,6 +473,9 @@
    <property name="text">
     <string>Import from &amp;Pocket...</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+K</string>
+   </property>
   </action>
  </widget>
  <tabstops>

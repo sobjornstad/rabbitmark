@@ -4,6 +4,7 @@ utils.py - Qt GUI and other utility functions
 (These should be split up in another refactor round in the future.)
 """
 
+from contextlib import contextmanager
 from enum import Enum, unique
 from typing import Any, Dict, Tuple
 
@@ -120,3 +121,9 @@ def forceExtension(filename, ext):
             if r != QMessageBox.Yes: # yes
                 return None
     return filename
+
+@contextmanager
+def signalsBlocked(widget):
+    old_value = widget.blockSignals(True)
+    yield
+    widget.blockSignals(old_value)
