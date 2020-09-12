@@ -1,6 +1,5 @@
 Refactor/Bugfix:
     * Clean up where committing and flushing is done
-    * Don't jump the cursor around when focus is lost.
     * Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
 
 Implement:

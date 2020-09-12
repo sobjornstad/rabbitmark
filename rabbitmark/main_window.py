@@ -246,10 +246,11 @@ class MainWindow(QMainWindow):
             sfdw.linkcheckCheck.setChecked(mark.skip_linkcheck)
             tags = ', '.join([i.text for i in mark.tags])
             sfdw.tagsBox.setText(tags)
-            # If a name or URL is too long to fit in the box, this will make
-            # the box show the beginning of it rather than the end.
-            for i in (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox):
-                i.setCursorPosition(0)
+        # If a name or URL is too long to fit in the box, this will make
+        # the box show the beginning of it rather than the end.
+        sfdw = self.detailsForm
+        for i in (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox):
+           i.setCursorPosition(0)
 
     def maybeSaveBookmark(self, old, new) -> None:  # pylint: disable=unused-argument
         """
@@ -276,7 +277,22 @@ class MainWindow(QMainWindow):
             if bookmark.save_if_edited(self.session, mark, utils.mark_dictionary(sfdw)):
                 self.session.commit()  # pylint: disable=no-member
                 self._resetTagList()
-            self._updateForSearch()
+
+                # HACK: _updateForSearch() moves the cursor to the start in
+                # these fields, so that the beginning will always be displayed
+                # when selecting a new item (otherwise, only the end of, say, a
+                # long URL, is shown, which is irritating). However, this is
+                # super annoying if we unfocus the window to go look something
+                # up and RM saves and the cursor goes back to the start! The
+                # correct way would be some major refactoring so fillForEdit()
+                # isn't called from both event handlers and other functions and
+                # isn't responsible for the reset. This will make it work
+                # correctly for now.
+                resetting = (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox)
+                oldCursorPositions = [i.cursorPosition() for i in resetting]
+                self._updateForSearch()
+                for i, posn in zip(resetting, oldCursorPositions):
+                    i.setCursorPosition(posn)
 
     def tagsSelect(self, what) -> None:
         "Select tags en masse using the convenience buttons at the bottom."
