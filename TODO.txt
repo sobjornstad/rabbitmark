@@ -6,12 +6,14 @@ Refactor/Bugfix:
 Implement:
     * New/Open (?). At any rate don't hard-code the database file
     * Import/Export functions
-    * Help menu options
+    * Help menu options (fix links)
     * WBM auto-save and fallback field
 
 Possible ideas:
     * CLI interface
     * Frequency of tags; "Hapax legomena last" option
+    * TiddlyWiki syncing
+    * Pocket syncing (one-way, but both pulling from Pocket and sending a link to Pocket)
 
 
 Manual database upgrade steps:

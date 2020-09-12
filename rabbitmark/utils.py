@@ -87,3 +87,36 @@ def mark_dictionary(detailsForm) -> Dict[str, Any]:
                  str(detailsForm.tagsBox.text()).split(',')
                  if i.strip() != ''],
     }
+
+def forceExtension(filename, ext):
+    """
+    On Linux, a filename extension might not be automatically appended to the
+    result of a file open/save box. This means we have to do it ourselves and
+    check to be sure we're not overwriting something ourselves.
+
+    This check is not safe from race conditions (if another program wrote a
+    file with the same name between this function running and the output
+    routine, the other file would be overwritten), but the chance of that
+    causing a bad problem are essentially zero in this situation, and
+    neither is the normal file-save routine.
+
+    Arguments:
+        filename: the path to (or simple name of) the file we're checking
+        ext: the extension, without period, you want to ensure is included
+
+    Return:
+      - The filename (modified or not) if the file does not exist;
+      - None if it does exist and the user said she didn't want to
+        overwrite it.
+
+    Originally taken from Tabularium <https://github.com/sobjornstad/tabularium>.
+    """
+    # on linux, the extension might not be automatically appended
+    if not filename.endswith('.%s' % ext):
+        filename += ".%s" % ext
+        if os.path.exists(filename):
+            r = questionBox("%s already exists.\nDo you want to "
+                            "replace it?" % filename)
+            if r != QMessageBox.Yes: # yes
+                return None
+    return filename

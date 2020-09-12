@@ -6,7 +6,7 @@ import sys
 from typing import NoReturn, Optional
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut, QDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut, QDialog, QFileDialog
 from PyQt5.QtGui import QDesktopServices, QKeySequence
 from PyQt5.QtCore import Qt, QUrl
 
@@ -15,10 +15,12 @@ from .forms.main import Ui_MainWindow
 from .forms.about import Ui_Dialog as AboutForm
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .librm import bookmark
+from .librm import interchange
 from .librm import tag as tag_ops
-from . import utils
-from . import wayback_search_dialog
+from . import import_dialog
 from . import link_check_dialog
+from . import wayback_search_dialog
+from . import utils
 
 
 # TODO: Centralize
@@ -37,6 +39,9 @@ class MainWindow(QMainWindow):
         # set up actions
         sf = self.form
         sf.action_Quit.triggered.connect(self.quit)
+        sf.actionExport_CSV.triggered.connect(self.onExportCsv)
+        sf.actionImport_CSV.triggered.connect(self.onImportCsv)
+
         sf.actionDelete.triggered.connect(self.onDeleteBookmark)
         sf.actionNew.triggered.connect(self.onAddBookmark)
         sf.actionNew_from_clipboard.triggered.connect(
@@ -293,6 +298,31 @@ class MainWindow(QMainWindow):
 
 
     ### Event handlers ###
+    # File
+    def onExportCsv(self) -> None:
+        "Export bookmarks to CSV."
+        fname = QFileDialog.getSaveFileName(
+            caption="Export Bookmarks to CSV",
+            filter="CSV files (*.csv);;All files (*)"
+        )[0]
+        if not fname:
+            return
+        fname = utils.forceExtension(fname, "csv")
+        num = interchange.export_bookmarks_to_csv(self.session, fname)
+        utils.informationBox(f"Successfully exported {num} bookmarks.",
+                             f"Export Bookmarks to CSV")
+
+    def onImportCsv(self) -> None:
+        "Import bookmarks from CSV."
+        fname = QFileDialog.getOpenFileName(
+            caption="Import Bookmarks from CSV",
+            filter="CSV files (*.csv);;All files (*)"
+        )[0]
+        if not fname:
+            return
+        dlg = import_dialog.ImportDialog(self, fname)
+        dlg.exec_()
+
     # Bookmarks
     def onAddBookmark(self) -> None:
         "Create a new bookmark without a given URL."
