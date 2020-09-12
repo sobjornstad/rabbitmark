@@ -15,6 +15,7 @@ from .forms.main import Ui_MainWindow
 from .forms.about import Ui_Dialog as AboutForm
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .librm import bookmark
+from .librm import config
 from .librm import interchange
 from .librm import pocket
 from .librm import tag as tag_ops
@@ -398,9 +399,29 @@ class MainWindow(QMainWindow):
             self.maybeSaveBookmark(self.detailsForm.urlBox, None)
 
     def onSendToPocket(self) -> None:
+        "Send the selected bookmark to the user's Pocket account."
+        pconf = pocket.PocketConfig(self.session)
+        if not pconf.valid():
+            #TODO: Give more useful pointer to how to do this
+            utils.errorBox("Your Pocket configuration is not valid. "
+                           "Please check the configuration.")
+            return
+
+        default_tags = config.get(self.session, "pocket_last_tags") or ""
+        tags, ok = utils.inputBox(
+            "Pocket tags (comma-separated):", "Add Item to Pocket", default_tags)
+        if not ok:
+            return
+
         mark = self.tableModel.getObj(self.tableView.currentIndex())
-        pocket.add_url(pocket.PocketConfig(), mark, ["source_rabbitmark"])
-        utils.informationBox(f'Successfully added "{mark.name}" to Pocket.')
+        ok, err = pocket.add_url(pconf, mark, (i.strip() for i in tags.split(',')))
+        if ok:
+            utils.informationBox(
+                f'Successfully added "{mark.name}" to your reading list.')
+            config.put(self.session, "pocket_last_tags", tags)
+            self.session.commit()
+        else:
+            utils.errorBox(err)
 
     # Tags
     def onDeleteTag(self) -> None:

@@ -455,6 +455,9 @@
    <property name="text">
     <string>Send to &amp;Pocket...</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+K</string>
+   </property>
   </action>
  </widget>
  <tabstops>

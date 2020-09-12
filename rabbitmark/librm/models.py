@@ -54,3 +54,10 @@ class Tag(Base):  # type: ignore
 
     def __repr__(self):
         return "<Tag '%s'>" % self.text
+
+
+class Config(Base):  # type: ignore
+    __tablename__ = 'conf'
+
+    key = Column(String, primary_key=True)
+    value = Column(String)
