@@ -15,20 +15,21 @@ def _uniquify_name(session, orig_name: str) -> str:
     "Given the name of a bookmark, add numbers to the end until it's unique."
     name = orig_name
     next_number = 2
-    while (session.query(Bookmark).filter(Bookmark.name == name).one_or_none()
-           is not None):
+    while name_exists(session, name):
         name = orig_name + f" {next_number}"
         next_number += 1
     return name
 
 
-def add_bookmark(session, url: str, tags: Iterable[str]) -> Bookmark:
+def add_bookmark(session, url: str, tags: Iterable[str],
+                 name: str = "New Bookmark", description: str = "") -> Bookmark:
     """
-    Add a new bookmark using the provided URL and tags, leaving other fields
-    blank. Returns the new Bookmark object.
+    Add a new bookmark using the provided starting fields.
+    Returns the new Bookmark object.
     """
-    bookmark = Bookmark(name=_uniquify_name(session, "New Bookmark"),
-                        url=url, description="", private=False, skip_linkcheck=False)
+    bookmark = Bookmark(name=_uniquify_name(session, name),
+                        url=url, description=description, private=False,
+                        skip_linkcheck=False)
     session.add(bookmark)
     for tag in tags:
         add_tag_to_bookmark(session, bookmark, tag)
@@ -62,6 +63,14 @@ def delete_bookmark(session, bookmark: Bookmark) -> None:
     session.delete(bookmark)
     for tag in tags:
         maybe_expunge_tag(session, tag)
+
+
+def name_exists(session, name: str) -> bool:
+    """
+    Return True if a bookmark by the exact name /name/ exists.
+    """
+    return (session.query(Bookmark).filter(Bookmark.name == name).one_or_none()
+            is not None)
 
 
 def save_if_edited(session, existing_bookmark: Bookmark,
@@ -147,6 +156,7 @@ def find_bookmarks(session,
     if not include_private:
         query = query.filter(Bookmark.private == False)
     return query.all()
+
 
 def get_bookmark_by_id(session, pk: int) -> Optional[Bookmark]:
     """

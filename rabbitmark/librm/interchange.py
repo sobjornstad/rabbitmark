@@ -4,7 +4,7 @@ interchange.py - import or export from data-interchange formats
 
 import csv
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 from . import bookmark
 from ..utils import SearchMode
@@ -54,25 +54,65 @@ def get_csv_schema(target_path: str) -> CsvSchema:
     with open(target_path, 'r', newline='') as f:
         sample = f.readline()
         dialect = csv.Sniffer().sniff(sample)
-        has_header = csv.Sniffer().has_header(sample)
 
-        if not has_header:
-            return dialect, None, None
-        else:
-            f.seek(0)
-            reader = csv.DictReader(f, dialect=dialect)
-            header_row = next(reader)
-            first_data_row = next(reader)
-            return CsvSchema(dialect, list(header_row.keys()), first_data_row)
+        f.seek(0)
+        reader = csv.DictReader(f, dialect=dialect)
+        first_data_row = next(reader)
+        return CsvSchema(dialect, reader.fieldnames, first_data_row)
 
 
-def import_bookmarks_from_csv(session, target_path: str) -> int:
+def import_bookmarks_from_csv(session, target_path: str, dialect,
+                              mapping: List[Optional[str]]) -> Tuple[int, int]:
     """
-    Import bookmarks from the CSV file at /target_path/.
+    Import bookmarks from the CSV file at /target_path/. If the names
+    duplicate names already present, do not import those.
+    (TODO: It would be nice to be able to choose whether you want to overwrite.)
+
+    Parameters:
+        session - Database session to create imported bookmarks in
+        target_path - File to import from
+        dialect - Dialect of CSV to import, obtained via get_csv_schema()
+        mapping - A list of RabbitMark fields to map each field in the CSV file to.
+            If this is ["Name", None, "URL", None, "Description"],
+            the 1st, 3rd, and 5th fields of the CSV will be mapped to Name, URL,
+            and Description, the 2nd and 4th fields will be ignored,
+            and the Tags RabbitMark field will be left blank.
 
     Return:
-        The number of bookmarks imported.
+        Tuple of (number imported, number of duplicates).
     
     Raises:
         Any file handling errors that may occur.
     """
+    with open(target_path, 'r', newline='') as f:
+        reader = csv.reader(f, dialect=dialect)
+        _ = next(reader)  # skip past header row
+
+        dupes = 0
+        imported = 0
+        for row in reader:
+            # Create a dictionary of defined field names to values for this row.
+            mark_data: Dict[str, Any] = {}
+            for col_data, col_role in zip(row, mapping):
+                if col_role is not None:
+                    mark_data[col_role.lower()] = col_data
+
+            # Sanity check. The UI should prevent the user from importing if
+            # these fields aren't mapped.
+            assert "url" in mark_data, "Missing URL role allowed in import!"
+            assert "name" in mark_data, "Missing Name role allowed in import!"
+
+            # If the bookmark exists already, ignore it.
+            # TODO: It would be nice to report the content so the user can see
+            # if there's an issue.
+            if bookmark.name_exists(session, mark_data['name']):
+                dupes += 1
+                continue
+
+            # It's a go, add the bookmark using whatever fields we've defined.
+            if 'tags' in mark_data:
+                mark_data['tags'] = (i.strip() for i in mark_data['tags'].split(','))
+            bookmark.add_bookmark(session, **mark_data)
+            imported += 1
+
+    return imported, dupes

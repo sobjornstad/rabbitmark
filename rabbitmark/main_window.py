@@ -320,8 +320,12 @@ class MainWindow(QMainWindow):
         )[0]
         if not fname:
             return
-        dlg = import_dialog.ImportDialog(self, fname)
+        dlg = import_dialog.ImportDialog(self, self.session, fname)
         dlg.exec_()
+
+        # Since we could have edited things within the dialog, we need to resync.
+        self._updateForSearch()
+        self._resetTagList()
 
     # Bookmarks
     def onAddBookmark(self) -> None:

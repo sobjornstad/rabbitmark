@@ -24,12 +24,14 @@ class MultipleResultsError(Exception):
 
 class ImportDialog(QDialog):
     "Import bookmarks from a CSV file."
-    def __init__(self, parent, target_file: str) -> None:
+    def __init__(self, parent, session, target_path: str) -> None:
         "Set up the dialog."
         QDialog.__init__(self)
         self.form = ImportMappingForm()
         self.form.setupUi(self)
         self.parent = parent
+        self.session = session
+        self.target_path = target_path
 
         # set up details widget
         self.detailsForm = BookmarkDetailsWidget()
@@ -48,7 +50,7 @@ class ImportDialog(QDialog):
         self.form.importButton.setEnabled(False)
 
         # set up mappings
-        self.schema = interchange.get_csv_schema(target_file)
+        self.schema = interchange.get_csv_schema(self.target_path)
         self.setupMappingTable(self.schema)
 
     def setupMappingTable(self, schema) -> None:
@@ -141,10 +143,28 @@ class ImportDialog(QDialog):
             i.setCursorPosition(0)
 
     def accept(self):
-        #TODO: Do something
-        super().accept()
+        "Import bookmarks and close dialog."
+        mapping = []
+        for table_rownum in range(len(self.schema.columns)):
+            rm_field = self.form.mappingTable.cellWidget(table_rownum, 1).currentText()
+            mapping.append(None if rm_field == DONT_MAP else rm_field)
 
-    def onMappingChanged(self, new_index) -> None:
+        imported, duplicated = interchange.import_bookmarks_from_csv(
+            session=self.session,
+            target_path=self.target_path,
+            dialect=self.schema.dialect,
+            mapping=mapping)
+        self.session.commit()
+
+        super().accept()
+        msg = f"{imported} bookmark{'' if imported == 1 else 's'} imported."
+        if duplicated > 0:
+            ess = '' if duplicated == 1 else 's'
+            msg += (f" {duplicated} bookmark{ess} "
+                    f"with name{ess} already in collection ignored.")
+        utils.informationBox(msg)
+
+    def onMappingChanged(self, _new_index) -> None:
         self._updatePreview()
 
     def onBrowseUrl(self) -> None:
