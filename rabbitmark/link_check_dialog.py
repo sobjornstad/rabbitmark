@@ -105,6 +105,7 @@ class LinkCheckDialog(QDialog):
             sfdw.urlBox.setText(mark.url)
             sfdw.descriptionBox.setPlainText(mark.description)
             sfdw.privateCheck.setChecked(mark.private)
+            sfdw.linkcheckCheck.setChecked(mark.skip_linkcheck)
             tags = ', '.join([i.text for i in mark.tags])
             sfdw.tagsBox.setText(tags)
             # If a name or URL is too long to fit in the box, this will make
