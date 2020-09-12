@@ -7,7 +7,7 @@ from typing import NoReturn, Optional
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut, QDialog, QFileDialog
-from PyQt5.QtGui import QDesktopServices, QKeySequence
+from PyQt5.QtGui import QDesktopServices, QKeySequence, QCursor
 from PyQt5.QtCore import Qt, QUrl
 
 from .bookmark_table import BookmarkTableModel
@@ -19,6 +19,7 @@ from .librm import config
 from .librm import interchange
 from .librm import pocket
 from .librm import tag as tag_ops
+from .librm.wayback_snapshot import request_snapshot
 from . import import_dialog
 from . import link_check_dialog
 from . import wayback_search_dialog
@@ -54,6 +55,8 @@ class MainWindow(QMainWindow):
         sf.actionDelete.triggered.connect(self.onDeleteBookmark)
         sf.actionCopyUrl.triggered.connect(self.onCopyUrl)
         sf.actionBrowseToUrl.triggered.connect(self.onBrowseForUrl)
+        sf.actionSendToPocket.triggered.connect(self.onSendToPocket)
+        sf.actionSnapshotSite.triggered.connect(self.onSnapshotSite)
 
         # Tag menu
         sf.actionRenameTag.triggered.connect(self.onRenameTag)
@@ -62,7 +65,6 @@ class MainWindow(QMainWindow):
 
         # Tools menu
         sf.actionBrokenLinks.triggered.connect(self.onCheckBrokenLinks)
-        sf.actionSendToPocket.triggered.connect(self.onSendToPocket)
 
         # Help menu
         sf.actionContents.triggered.connect(self.onHelpContents)
@@ -422,6 +424,23 @@ class MainWindow(QMainWindow):
             self.session.commit()
         else:
             utils.errorBox(err)
+
+    def onSnapshotSite(self) -> None:
+        mark = self.tableModel.getObj(self.tableView.currentIndex())
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+        try:
+            request_snapshot(mark.url)
+        except Exception as e:
+            utils.errorBox(f"Sorry, your request did not complete successfully. "
+                           f"That's about all we can know, but here's a little more:\n"
+                           f"{str(e)}")
+            return
+        finally:
+            QApplication.restoreOverrideCursor()
+        utils.informationBox(
+            "The WayBackMachine reports that it has archived this site. "
+            "You can now search for the snapshot.")
+
 
     # Tags
     def onDeleteTag(self) -> None:

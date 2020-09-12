@@ -84,3 +84,17 @@ def get_snapshots(original_url: str) -> Sequence[WaybackSnapshot]:
     # First row is headers, so start after that.
     return [WaybackSnapshot.from_api_return(original_url, i)
             for i in snapshot_data[1:]]
+
+
+def request_snapshot(url: str) -> None:
+    """
+    Ask the WayBackMachine to take a snapshot of /url/ now.
+
+    Unfortunately there is no real API for this currently, so it's not
+    possible to get the new URL, a confirmation that it succeeded, or any
+    error info. I wrote to the Internet Archive asking about this, because
+    they alluded to a private API in a blog post, but nobody ever got back to
+    me.
+    """
+    r = requests.get(f"https://web.archive.org/save/{url}")
+    r.raise_for_status()

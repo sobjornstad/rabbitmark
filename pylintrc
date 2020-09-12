@@ -39,6 +39,7 @@ load-plugins=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 disable=no-else-return
+disable=broad-except
 
 
 [REPORTS]

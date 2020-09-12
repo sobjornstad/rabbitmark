@@ -250,11 +250,12 @@
     <addaction name="actionNew_from_clipboard"/>
     <addaction name="separator"/>
     <addaction name="actionWayBack"/>
-    <addaction name="actionSendToPocket"/>
     <addaction name="actionDelete"/>
     <addaction name="separator"/>
     <addaction name="actionCopyUrl"/>
     <addaction name="actionBrowseToUrl"/>
+    <addaction name="actionSendToPocket"/>
+    <addaction name="actionSnapshotSite"/>
    </widget>
    <widget class="QMenu" name="menuTag">
     <property name="title">
@@ -457,6 +458,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+K</string>
+   </property>
+  </action>
+  <action name="actionSnapshotSite">
+   <property name="text">
+    <string>&amp;Request WayBackMachine Snapshot...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+W</string>
    </property>
   </action>
  </widget>

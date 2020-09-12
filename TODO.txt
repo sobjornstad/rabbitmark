@@ -1,19 +1,19 @@
 Refactor/Bugfix:
     * Clean up where committing and flushing is done
     * Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
+    * Grey out menu items when they're not usable (esp. Tags)
 
 Implement:
     * New/Open (?). At any rate don't hard-code the database file
     * Help menu options (fix links)
-    * WBM auto-save and fallback field
+    * Note when WBM snapshot has been saved?
 
 Possible ideas:
     * CLI interface
     * Frequency of tags; "Hapax legomena last" option
     * TiddlyWiki syncing
-    * Pocket syncing (one-way, but both pulling from Pocket and sending a link to Pocket)
+    * Retrieve items matching some tag from Pocket
     * Import/export could be improved
-
 
 Manual database upgrade steps:
     - Dump the old DB:
