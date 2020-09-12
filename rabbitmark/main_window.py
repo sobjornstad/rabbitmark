@@ -65,6 +65,7 @@ class MainWindow(QMainWindow):
 
         # Tools menu
         sf.actionBrokenLinks.triggered.connect(self.onCheckBrokenLinks)
+        sf.actionImportFromPocket.triggered.connect(self.onImportFromPocket)
 
         # Help menu
         sf.actionContents.triggered.connect(self.onHelpContents)
@@ -511,6 +512,9 @@ class MainWindow(QMainWindow):
             # Since we could have edited things within the dialog, we need to resync.
             self._updateForSearch()
             self._resetTagList()
+
+    def onImportFromPocket(self) -> None:
+        pocket.sync_items(self.session, pocket.PocketConfig(self.session), "reference")
 
     def onTogglePrivate(self) -> None:
         """

@@ -279,6 +279,7 @@
      <string>T&amp;ools</string>
     </property>
     <addaction name="actionBrokenLinks"/>
+    <addaction name="actionImportFromPocket"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBookmark"/>
@@ -466,6 +467,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+W</string>
+   </property>
+  </action>
+  <action name="actionImportFromPocket">
+   <property name="text">
+    <string>Import from &amp;Pocket...</string>
    </property>
   </action>
  </widget>

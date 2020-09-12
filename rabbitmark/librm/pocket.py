@@ -3,7 +3,7 @@ pocket.py - integration with the Pocket read-it-later service
 """
 
 import json
-from typing import Iterable, Tuple
+from typing import Callable, Iterable, Tuple
 
 import requests
 
@@ -20,7 +20,8 @@ class PocketConfig:
     API information for connecting to Pocket.
     Some is hard-coded, other items are retrieved from the user's configuration table.
     """
-    endpoint = "https://getpocket.com/v3/add"
+    add_endpoint = "https://getpocket.com/v3/add"
+    get_endpoint = "https://getpocket.com/v3/get"
 
     def __init__(self, session):
         self.consumer_key = config.get(session, "pocket_consumer_key")
@@ -30,7 +31,44 @@ class PocketConfig:
         "Check if the configuration is valid."
         return (self.consumer_key is not None
                 and self.access_token is not None
-                and self.endpoint is not None)
+                and self.add_endpoint is not None
+                and self.get_endpoint is not None)
+
+
+def _wrap_request(request_func: Callable):
+    """
+    Wrap the requests call in request_func in some error-handling logic.
+    Return tuple:
+    
+    [0] the request return value
+    [1] True if successful, False if not
+    [2] An error message (or an empty string if successful)
+    """
+    try:
+        r = request_func()
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+        return r, False, ("Unable to connect to Pocket. "
+                          "Please check your network connection.")
+    except requests.exceptions.RequestException as e:
+        return r, False, (f"Unknown error from Python requests: {str(e)}")
+
+    if r.status_code == 200:
+        return r, True, ""
+    elif r.status_code == 401:
+        return r, False, ("Unable to authenticate to the Pocket API. "
+                          "Please check your Pocket configuration.")
+    elif r.status_code == 403:
+        return r, False, ("Unable to authenticate to the Pocket API. Please check your "
+                          "Pocket configuration.\n\nIf you're sure your configuration is "
+                          "right, and you've been adding a lot of items to Pocket, "
+                          "it's also possible you're being rate-limited. In that case, "
+                          "wait an hour and try again.")
+    elif r.status_code == 503:
+        # Find it hard to believe this will ever happen scheduled nowadays,
+        # but their API docs says it's a possible message...
+        return r, False, "Pocket is down for maintenance. Please try again later."
+    else:
+        return r, False, r.json()['X-Error']
 
 
 def add_url(pconf: PocketConfig, mark: Bookmark,
@@ -67,28 +105,50 @@ def add_url(pconf: PocketConfig, mark: Bookmark,
         "X-Accept": "application/json",
     }
 
-    try:
-        r = requests.post(url=pconf.endpoint, data=my_json, headers=my_headers)
-    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-        return False, ("Unable to connect to Pocket. "
-                       "Please check your network connection.")
-    except requests.exceptions.RequestException as e:
-        return False, (f"Unknown error from Python requests: {str(e)}")
+    return _wrap_request(
+        lambda: requests.post(url=pconf.add_endpoint, data=my_json, headers=my_headers)
+        )[1:]
 
-    if r.status_code == 200:
-        return True, ""
-    elif r.status_code == 401:
-        return False, ("Unable to authenticate to the Pocket API. "
-                       "Please check your Pocket configuration.")
-    elif r.status_code == 403:
-        return False, ("Unable to authenticate to the Pocket API. Please check your "
-                       "Pocket configuration.\n\nIf you're sure your configuration is "
-                       "right, and you've been adding a lot of items to Pocket, "
-                       "it's also possible you're being rate-limited. In that case, "
-                       "wait an hour and try again.")
-    elif r.status_code == 503:
-        # Find it hard to believe this will ever happen scheduled nowadays,
-        # but their API docs says it's a possible message...
-        return False, "Pocket is down for maintenance. Please try again later."
-    else:
-        return False, r.json()['X-Error']
+
+def sync_items(session, pconf: PocketConfig, tag: str = None,
+               favorite: bool = False) -> int:
+    if not pconf.valid():
+        raise InvalidConfigurationError()
+
+    params = {
+        "consumer_key": pconf.consumer_key,
+        "access_token": pconf.access_token,
+        "state": "all",  # not just unread
+        "detailType": "complete",  # otherwise no tags
+    }
+    if favorite:
+        params['favorite'] = 1
+    if tag is not None:
+        params['tag'] = tag
+    since = config.get(session, "pocket_since")
+    if since is not None:
+        params['since'] = since
+
+    my_json = json.dumps(params)
+    my_headers = {
+        "Content-Type": "application/json",
+        "X-Accept": "application/json",
+    }
+    print(my_json)
+
+    r, successful, err = _wrap_request(
+        lambda: requests.post(url=pconf.get_endpoint, data=my_json, headers=my_headers)
+    )
+
+    if successful:
+        response = r.json()
+        #from pprint import pprint; pprint(response)
+        for site in response['list'].values():
+            print(site['resolved_title'])
+            print(site['resolved_url'])
+            print(site['excerpt'])
+            print(', '.join(list(site['tags'].keys())))
+        #config.put(session, "pocket_since", response['since'])
+
+
+    return 0
