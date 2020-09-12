@@ -6,18 +6,23 @@ import sys
 from typing import NoReturn, Optional
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut
+from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut, QDialog
 from PyQt5.QtGui import QDesktopServices, QKeySequence
 from PyQt5.QtCore import Qt, QUrl
 
 from .bookmark_table import BookmarkTableModel
 from .forms.main import Ui_MainWindow
+from .forms.about import Ui_Dialog as AboutForm
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .librm import bookmark
 from .librm import tag as tag_ops
 from . import utils
 from . import wayback_search_dialog
 from . import link_check_dialog
+
+
+# TODO: Centralize
+MYVERSION = "0.1.0"
 
 
 class MainWindow(QMainWindow):
@@ -46,6 +51,10 @@ class MainWindow(QMainWindow):
         sf.actionShowPrivate.triggered.connect(self.onTogglePrivate)
         sf.actionBrokenLinks.triggered.connect(self.onCheckBrokenLinks)
         self.showPrivates = False
+
+        sf.actionContents.triggered.connect(self.onHelpContents)
+        sf.actionReportBug.triggered.connect(self.onReportBug)
+        sf.actionAbout.triggered.connect(self.onAbout)
 
         sf.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         sf.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
@@ -408,6 +417,24 @@ class MainWindow(QMainWindow):
         self.showPrivates = not self.showPrivates
         self._updateForSearch()
         self._resetTagList()
+        
+    def onHelpContents(self) -> None:
+        pass
+
+    def onReportBug(self) -> None:
+        pass
+
+    def onAbout(self) -> None:
+        class AboutWindow(QDialog):
+            def __init__(self):
+                super().__init__()
+                self.form = AboutForm()
+                self.form.setupUi(self)
+                self.form.versionLabel.setText(
+                    f'<span style="font-size: 12pt;">Version {MYVERSION}</span>')
+                self.form.okButton.clicked.connect(self.accept)
+        dlg = AboutWindow()
+        dlg.exec_()
 
     # Named by convention.
     #pylint: disable=unused-argument

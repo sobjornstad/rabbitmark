@@ -271,9 +271,9 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="actionContents"/>
-    <addaction name="actionReport_Bug"/>
+    <addaction name="actionReportBug"/>
     <addaction name="separator"/>
-    <addaction name="actionAbout_RabbitMark"/>
+    <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -410,12 +410,15 @@
     <string>F1</string>
    </property>
   </action>
-  <action name="actionAbout_RabbitMark">
+  <action name="actionAbout">
    <property name="text">
     <string>&amp;About RabbitMark</string>
    </property>
+   <property name="shortcut">
+    <string>Shift+F1</string>
+   </property>
   </action>
-  <action name="actionReport_Bug">
+  <action name="actionReportBug">
    <property name="text">
     <string>Report &amp;Bug</string>
    </property>
