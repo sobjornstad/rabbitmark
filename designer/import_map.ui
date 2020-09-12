@@ -18,6 +18,12 @@
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <widget class="QTableWidget" name="mappingTable">
+       <property name="maximumSize">
+        <size>
+         <width>400</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <property name="alternatingRowColors">
         <bool>true</bool>
        </property>

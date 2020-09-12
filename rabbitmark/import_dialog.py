@@ -36,6 +36,11 @@ class ImportDialog(QDialog):
         self.detailsForm.setupUi(self.form.previewWidget)
         self.detailsForm.browseUrlButton.clicked.connect(self.onBrowseUrl)
         self.detailsForm.copyUrlButton.clicked.connect(self.onCopyUrl)
+        sfdw = self.detailsForm
+        for i in (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox, sfdw.descriptionBox):
+            i.setReadOnly(True)
+        for i in (sfdw.privateCheck, sfdw.linkcheckCheck):
+            i.setEnabled(False)
 
         # set up buttons
         self.form.importButton.clicked.connect(self.accept)
