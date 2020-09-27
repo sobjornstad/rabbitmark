@@ -11,12 +11,7 @@ from PyQt5.QtCore import Qt, QAbstractTableModel, pyqtSignal
 from .librm.bookmark import Bookmark
 
 class BookmarkTableModel(QAbstractTableModel):
-    """
-    Handles the interface to the database. Currently it *also* handles tag
-    management, which isn't really part of the description of the model; this
-    code should be moved into a TagManager or a set of functions of that
-    description soon.
-    """
+    "Handles the display of the main table of bookmarks."
     dataChanged = pyqtSignal()
 
     @unique
