@@ -392,7 +392,9 @@ class MainWindow(QMainWindow):
 
         self.tableModel.updateAfterDelete(curIndex)
         self._resetTagList()
-        self.tableView.setCurrentIndex(nextRow)
+        if nextRow is not None:
+            self.tableView.setCurrentIndex(nextRow)
+        self.fillEditPane()
 
     def onWayBackMachine(self) -> None:
         "Find a snapshot of the item's URL in the WayBackMachine."

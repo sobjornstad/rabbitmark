@@ -1,5 +1,4 @@
 Bugfixes:
-    * When deleting the last item in a view, RabbitMark should not crash
     * Grey out menu items when they're not usable (esp. for Tags menu)
     * Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
 

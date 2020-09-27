@@ -135,8 +135,9 @@ class BookmarkTableModel(QAbstractTableModel):
                 nextObj = self.L[row+1]
         except IndexError:
             # there are no other items
-            nextObj = None
-        return self.indexFromPk(nextObj.id)
+            return None
+        else:
+            return self.indexFromPk(nextObj.id)
 
     def updateAfterDelete(self, index) -> None:
         """
