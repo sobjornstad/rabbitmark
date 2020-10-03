@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut, QDialog, QFile
 from PyQt5.QtGui import QDesktopServices, QKeySequence, QCursor
 from PyQt5.QtCore import Qt, QUrl
 
-from rabbitmark.definitions import MYVERSION, SearchMode
+from rabbitmark.definitions import MYVERSION, NOTAGS, SearchMode
 from rabbitmark.librm import bookmark
 from rabbitmark.librm import config
 from rabbitmark.librm import database
@@ -132,9 +132,9 @@ class MainWindow(QMainWindow):
                 "Tags cannot be edited in bulk. Please select exactly one tag.",
                 "Cannot rename multiple tags")
             return None
-        elif tags[0] == utils.NOTAGS:
+        elif tags[0] == NOTAGS:
             utils.errorBox(
-                f"You cannot edit '{utils.NOTAGS}'. It is not a tag; rather, "
+                f"You cannot edit '{NOTAGS}'. It is not a tag; rather, "
                 f"it indicates that you would like to search for items that do not "
                 f"have any tags.",
                 "Item not editable")
@@ -147,7 +147,7 @@ class MainWindow(QMainWindow):
         # Create the new item with any tags that are selected.
         tags = [str(i.text())
                 for i in self.form.tagList.selectedItems()
-                if str(i.text()) != utils.NOTAGS]
+                if str(i.text()) != NOTAGS]
 
         # Full-text filter is automatically cleared on add -- otherwise, the new
         # item won't be visible!
@@ -262,7 +262,7 @@ class MainWindow(QMainWindow):
         # the box show the beginning of it rather than the end.
         sfdw = self.detailsForm
         for i in (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox):
-           i.setCursorPosition(0)
+            i.setCursorPosition(0)
 
     def maybeSaveBookmark(self, old, new) -> None:  # pylint: disable=unused-argument
         """
@@ -338,7 +338,7 @@ class MainWindow(QMainWindow):
         fname = utils.forceExtension(fname, "csv")
         num = interchange.export_bookmarks_to_csv(self.session, fname)
         utils.informationBox(f"Successfully exported {num} bookmarks.",
-                             f"Export Bookmarks to CSV")
+                             "Export Bookmarks to CSV")
 
     def onImportCsv(self) -> None:
         "Import bookmarks from CSV."
@@ -429,6 +429,7 @@ class MainWindow(QMainWindow):
             utils.errorBox(err)
 
     def onSnapshotSite(self) -> None:
+        "Ask the WayBackMachine to take a snapshot of the selected site now."
         mark = self.tableModel.getObj(self.tableView.currentIndex())
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         try:
@@ -516,6 +517,7 @@ class MainWindow(QMainWindow):
             self._resetTagList()
 
     def onImportFromPocket(self) -> None:
+        "Create new bookmarks from a search against the user's Pocket library."
         if pocket_import_dialog.import_process(self):
             self._updateForSearch()
             self._resetTagList()
@@ -528,17 +530,23 @@ class MainWindow(QMainWindow):
         self.showPrivates = not self.showPrivates
         self._updateForSearch()
         self._resetTagList()
-        
-    def onHelpContents(self) -> None:
+
+    @staticmethod
+    def onHelpContents() -> None:
+        "Display the manual."
         # TODO: Update with real URL
         QDesktopServices.openUrl(QUrl("https://google.com"))
 
-    def onReportBug(self) -> None:
+    @staticmethod
+    def onReportBug() -> None:
+        "Open the GitHub issues page."
         # TODO: Update with real URL
         QDesktopServices.openUrl(QUrl("https://yahoo.com"))
 
     def onAbout(self) -> None:
+        "Load the About screen to display metadata on and an description of RabbitMark."
         class AboutWindow(QDialog):
+            "Simple window to show the about form, with the current app version."
             def __init__(self):
                 super().__init__()
                 self.form = AboutForm()

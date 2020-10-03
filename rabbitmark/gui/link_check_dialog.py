@@ -9,9 +9,9 @@ from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import pyqtSignal, QThread, QUrl
 
-from ..librm import bookmark
-from ..librm import broken_links
-from ..librm.broken_links import LinkCheck
+from rabbitmark.librm import bookmark
+from rabbitmark.librm import broken_links
+from rabbitmark.librm.broken_links import LinkCheck
 
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .forms.linkcheck import Ui_Dialog as Ui_LinkCheckDialog
@@ -59,6 +59,7 @@ class LinkCheckDialog(QDialog):
         self.form.pageList.setFocus()
 
     def accept(self):
+        "Save any bookmark we were still editing and close the dialog."
         try:
             self.saveBookmark()
         except KeyError:
@@ -116,7 +117,8 @@ class LinkCheckDialog(QDialog):
             err_des = blink_obj.error_description
             err_code = blink_obj.status_code
             self.form.detailsBox.setText(err_des if err_des is not None else "")
-            self.form.statusCodeBox.setText(str(err_code) if err_code is not None else "")
+            self.form.statusCodeBox.setText(str(err_code)
+                                            if err_code is not None else "")
         else:
             # We've handled all the items. Close the dialog.
             self.accept()

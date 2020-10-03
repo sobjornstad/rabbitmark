@@ -10,9 +10,11 @@ from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5.QtGui import QDesktopServices, QCursor
 from PyQt5.QtCore import QUrl, Qt
 
+from rabbitmark.definitions import DATE_FORMAT
+from rabbitmark.librm import binary_search
+from rabbitmark.librm import wayback_snapshot
+
 from .forms.archivesearch import Ui_Dialog as Ui_ArchiveDialog
-from ..librm import binary_search
-from ..librm import wayback_snapshot
 from . import utils
 
 
@@ -88,7 +90,7 @@ class WayBackDialog(QDialog):
         This method should be called after proceed() is done.
         """
         current_item = self.sd[self.bs.index]
-        snapshot_time = current_item.formatted_timestamp(utils.DATE_FORMAT)
+        snapshot_time = current_item.formatted_timestamp(DATE_FORMAT)
         if re.match("[-45]", current_item.response):
             if current_item.response == "-":
                 err = "Unspecified error"

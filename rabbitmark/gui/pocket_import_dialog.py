@@ -2,16 +2,14 @@
 wayback_search_dialog.py -- interface for searching the WayBackMachine
 """
 
-from typing import Optional, List
-
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5.QtGui import QDesktopServices, QCursor
-from PyQt5.QtCore import pyqtSignal, QThread, QUrl, Qt
+from PyQt5.QtCore import QUrl, Qt
 
-from ..librm import bookmark
-from ..librm import config
-from ..librm import pocket
+from rabbitmark.librm import bookmark
+from rabbitmark.librm import config
+from rabbitmark.librm import pocket
 
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .forms.pocket_import import Ui_Dialog as Ui_PocketImportDialog
@@ -24,13 +22,14 @@ class PocketSettingsDialog(QDialog):
     Choose settings for importing from Pocket.
     """
     def __init__(self, parent, session) -> None:
-        "Set up the dialog."
         QDialog.__init__(self)
         self.form = Ui_PocketImportDialog()
         self.form.setupUi(self)
         self.parent = parent
         self.session = session
+        self.items = None  #: stores the links we choose to import
 
+        #: Mapping of config keys to objects that use their value.
         self.persistence_layer_map = {
             "pocket_dlg_str_syncTag": self.form.includeTagBox,
             "pocket_dlg_bool_favoritesOnly": self.form.includeFavoritesCheck,
@@ -40,6 +39,7 @@ class PocketSettingsDialog(QDialog):
             "pocket_dlg_str_discardTags": self.form.discardTagsBox,
             "pocket_dlg_str_tagWith": self.form.tagImportsBox,
         }
+        #: Default options for each config key if it has never been set.
         self.default_options = {
             "pocket_dlg_str_syncTag": "",
             "pocket_dlg_bool_favoritesOnly": False,
@@ -56,6 +56,10 @@ class PocketSettingsDialog(QDialog):
         self._populate_dialog()
 
     def _populate_dialog(self):
+        """
+        Fill last-used options in this dialog from the database config, or
+        use defaults if not available.
+        """
         for name, obj in self.persistence_layer_map.items():
             if '_str_' in name:
                 cur = config.get(self.session, name)
@@ -133,24 +137,33 @@ class PocketSettingsDialog(QDialog):
         _widget_dependency(sf.tagImportsCheck, sf.tagImportsBox, _line_facet)
 
     def _save_fields(self):
+        "Save the used values of configuration fields to the database for next time."
         for name, obj in self.persistence_layer_map.items():
             if '_str_' in name:
-                cur = config.put(self.session, name, obj.text())
+                config.put(self.session, name, obj.text())
             elif '_bool_' in name:
-                cur = config.put(self.session, name, str(obj.isChecked()))
+                config.put(self.session, name, str(obj.isChecked()))
             else:
                 raise AssertionError("Improperly typed configuration field!")
         self.session.commit()
 
 
     def accept(self):
+        """
+        Retrieve items matching the configuration from Pocket and set
+        self.items to these, in a dictionary format that the
+        PocketArticleDialog can read, then close this dialog.
+
+        If there aren't any results, inhibit the close and instruct the user to
+        try different criteria or cancel the import.
+        """
         self._save_fields()
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         try:
             success, result = pocket.sync_items(
                 session=self.session,
                 pconf=pocket.PocketConfig(self.session),
-                get_only_tag = self.form.includeTagBox.text(),
+                get_only_tag=self.form.includeTagBox.text(),
                 get_only_favorites=self.form.includeFavoritesCheck.isChecked(),
                 get_only_since=self.form.incrementalSyncCheck.isChecked(),
                 use_excerpt=self.form.copyExcerptCheck.isChecked(),
@@ -170,7 +183,6 @@ class PocketSettingsDialog(QDialog):
                              "Please try different criteria.")
         else:
             super().accept()
-
 
 
 class PocketArticleDialog(QDialog):
@@ -219,6 +231,7 @@ class PocketArticleDialog(QDialog):
                 f"because you already have a bookmark with the same URL.")
 
     def accept(self):
+        "Add the selected items as new bookmarks and close the window."
         for list_item in self.form.importList.findItems('.*', Qt.MatchRegExp):
             item = self.items[list_item.text()]
             bookmark.add_bookmark(self.session, **item)
@@ -227,6 +240,11 @@ class PocketArticleDialog(QDialog):
         utils.informationBox(f"{self.form.importList.count()} items imported.")
 
     def onBack(self) -> None:
+        """
+        Return to the import settings dialog by setting a flag on and
+        rejecting this dialog; the parent of this dialog can then check this
+        flag and re-trigger the settings dialog.
+        """
         self.went_back = True
         self.reject()
 
@@ -237,26 +255,34 @@ class PocketArticleDialog(QDialog):
         QApplication.clipboard().setText(self.detailsForm.urlBox.text())
 
     def onImportOne(self) -> None:
+        "Move the selected item from the skip list to the import list."
         item = self.form.skipList.takeItem(self.form.skipList.currentRow())
         self.form.importList.addItem(item)
 
     def onImportAll(self) -> None:
+        "Move all items to the import list."
         with utils.signalsBlocked(self.form.importList):
             self.form.skipList.clear()
             self.form.importList.clear()
             self.form.importList.addItems(list(self.items.keys()))
 
     def onSkipOne(self) -> None:
+        "Move the selected item from the import list to the skip list."
         item = self.form.importList.takeItem(self.form.importList.currentRow())
         self.form.skipList.addItem(item)
 
     def onSkipAll(self) -> None:
+        "Move all items to the skip list."
         with utils.signalsBlocked(self.form.importList):
             self.form.importList.clear()
             self.form.skipList.clear()
             self.form.skipList.addItems(list(self.items.keys()))
 
     def onImportSelectChanged(self, new, _previous) -> None:
+        """
+        The import side of the dialog populates the bottom preview pane.
+        This event handler updates that pane.
+        """
         sfdw = self.detailsForm
         item = self.items[new.text()]
         sfdw.nameBox.setText(item['name'])

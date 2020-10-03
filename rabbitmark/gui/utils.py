@@ -5,7 +5,7 @@ utils.py - Qt GUI and other utility functions
 """
 
 from contextlib import contextmanager
-from enum import Enum, unique
+import os
 from typing import Any, Dict, Tuple
 
 # Yet again, pylint can't seem to read PyQt5's module structure properly...
@@ -47,7 +47,7 @@ def questionBox(text, title=None) -> bool:
     msgBox = _box(text, title, QMessageBox.Question)
     msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
     msgBox.setDefaultButton(QMessageBox.No)
-    return (msgBox.exec_() == QMessageBox.Yes)
+    return msgBox.exec_() == QMessageBox.Yes
 
 
 def inputBox(label, title=None, defaultText=None) -> Tuple[str, bool]:
@@ -116,6 +116,7 @@ def forceExtension(filename, ext):
 
 @contextmanager
 def signalsBlocked(widget):
+    "Context manager to block signals on a widget /widget/, then restore the old value."
     old_value = widget.blockSignals(True)
     yield
     widget.blockSignals(old_value)

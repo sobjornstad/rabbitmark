@@ -6,8 +6,8 @@ import csv
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import bookmark
 from rabbitmark.definitions import SearchMode
+from . import bookmark
 
 
 @dataclass
@@ -80,7 +80,7 @@ def import_bookmarks_from_csv(session, target_path: str, dialect,
 
     Return:
         Tuple of (number imported, number of duplicates).
-    
+
     Raises:
         Any file handling errors that may occur.
     """

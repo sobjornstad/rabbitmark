@@ -39,7 +39,7 @@ def _wrap_request(request_func: Callable):
     """
     Wrap the requests call in request_func in some error-handling logic.
     Return tuple:
-    
+
     [0] the request return value
     [1] True if successful, False if not
     [2] An error message (or an empty string if successful)
@@ -58,11 +58,12 @@ def _wrap_request(request_func: Callable):
         return r, False, ("Unable to authenticate to the Pocket API. "
                           "Please check your Pocket configuration.")
     elif r.status_code == 403:
-        return r, False, ("Unable to authenticate to the Pocket API. Please check your "
-                          "Pocket configuration.\n\nIf you're sure your configuration is "
-                          "right, and you've been adding a lot of items to Pocket, "
-                          "it's also possible you're being rate-limited. In that case, "
-                          "wait an hour and try again.")
+        return r, False, (
+            "Unable to authenticate to the Pocket API. Please check your "
+            "Pocket configuration.\n\nIf you're sure your configuration is "
+            "right, and you've been adding a lot of items to Pocket, "
+            "it's also possible you're being rate-limited. In that case, "
+            "wait an hour and try again.")
     elif r.status_code == 503:
         # Find it hard to believe this will ever happen scheduled nowadays,
         # but their API docs says it's a possible message...
@@ -111,15 +112,16 @@ def add_url(pconf: PocketConfig, mark: Bookmark,
 
 
 def sync_items(
-    session,
-    pconf: PocketConfig,
-    get_only_tag: str = None,
-    get_only_favorites: bool = False,
-    get_only_since: bool = True,
-    use_excerpt: bool = False,
-    tag_with: str = None,
-    tag_passthru: bool = False,
-    discard_pocket_tags: str = None) -> Tuple[bool, Union[List[Dict[str, str]], str]]:
+        session,
+        pconf: PocketConfig,
+        get_only_tag: str = None,
+        get_only_favorites: bool = False,
+        get_only_since: bool = True,
+        use_excerpt: bool = False,
+        tag_with: str = None,
+        tag_passthru: bool = False,
+        discard_pocket_tags: str = None) \
+        -> Tuple[bool, Union[List[Dict[str, str]], str]]:
     """
     Retrieve items from Pocket that match the provided criteria.
 
@@ -152,7 +154,7 @@ def sync_items(
         "X-Accept": "application/json",
     }
 
-    r, successful, err = _wrap_request(
+    r, successful, _ = _wrap_request(
         lambda: requests.post(url=pconf.get_endpoint, data=my_json, headers=my_headers)
     )
     if not successful:

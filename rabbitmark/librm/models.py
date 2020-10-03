@@ -33,7 +33,7 @@ class Bookmark(Base):  # type: ignore
     private = Column(Boolean, nullable=False)
     skip_linkcheck = Column(Boolean, nullable=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (f"<Bookmark id={self.id} name={self.name} url={self.url} "
                 f"tags={self.tags} private={self.private} "
                 f"skip_linkcheck={self.skip_linkcheck}>")
@@ -49,15 +49,19 @@ class Tag(Base):  # type: ignore
                              secondary=mark_tag_assoc,
                              back_populates="tags")
 
-    def __str__(self):  # pylint: disable=invalid-str-returned
+    def __str__(self) -> str:  # pylint: disable=invalid-str-returned
         return self.text
 
-    def __repr__(self):
-        return "<Tag '%s'>" % self.text
+    def __repr__(self) -> str:
+        return f"<Tag '{self.text}'>"
 
 
 class Config(Base):  # type: ignore
+    "Key-value store for preferences and state."
     __tablename__ = 'conf'
 
     key = Column(String, primary_key=True)
     value = Column(String)
+
+    def __repr__(self) -> str:
+        return f"<Config {self.key}:{self.value}>"

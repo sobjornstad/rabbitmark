@@ -2,14 +2,14 @@
 import_dialog.py -- interface for importing from a CSV file
 """
 
-from typing import Optional, List
+from typing import Optional
 
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import QUrl, Qt
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import QApplication, QDialog, QTableWidgetItem, QComboBox
 
-from ..librm import interchange
+from rabbitmark.librm import interchange
 
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .forms.import_map import Ui_Dialog as ImportMappingForm
@@ -98,6 +98,13 @@ class ImportDialog(QDialog):
             return matches[0]
 
     def _updatePreview(self) -> None:
+        """
+        Change the preview section of the window to show a sample entry that
+        will be created when import is successful.
+
+        The result depends on how fields are currently mapped; the entire preview
+        may be cleared if the new mapping is not valid.
+        """
         def _get(field):
             mapping = self._currentMappingOf(field)
             return None if mapping is None else self.schema.first_data_row[mapping]

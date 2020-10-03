@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional, List
 # pylint: disable=no-name-in-module
 from PyQt5.QtCore import Qt, QAbstractTableModel, pyqtSignal
 
-from ..librm.bookmark import Bookmark
+from rabbitmark.librm.bookmark import Bookmark
 
 class BookmarkTableModel(QAbstractTableModel):
     "Handles the display of the main table of bookmarks."
