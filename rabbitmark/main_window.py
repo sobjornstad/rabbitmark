@@ -16,6 +16,7 @@ from .forms.about import Ui_Dialog as AboutForm
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .librm import bookmark
 from .librm import config
+from .librm import database
 from .librm import interchange
 from .librm import pocket
 from .librm import tag as tag_ops
@@ -570,8 +571,9 @@ class MainWindow(QMainWindow):
         sys.exit(0)
 
 
-def start(sessionmaker) -> None:
+def start() -> None:
     "Application entry point."
+    sessionmaker = database.make_Session()
     app = QApplication(sys.argv)
     mw = MainWindow(sessionmaker)
     app.focusChanged.connect(mw.maybeSaveBookmark)

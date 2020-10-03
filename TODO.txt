@@ -20,3 +20,4 @@ Possible ideas:
     * Import/export could be improved
     * Duplicate finding tool
     * Save note that WBM snapshot has been taken to database?
+    * Option to automatically snapshot a site in the WBM when bookmarking it
