@@ -1,11 +1,13 @@
 # This file is part of RabbitMark.
-# Copyright 2015, 2019 Soren Bjornstad. All rights reserved.
+# Copyright 2015, 2019, 2020 Soren Bjornstad. All rights reserved.
 
 """
 models.py - SQLAlchemy ORM database model for RabbitMark
 """
 
 #pylint: disable=invalid-name
+
+import re
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship

@@ -1,7 +1,10 @@
 PyQt5~=5.11.3
 requests~=2.21.0
 SQLAlchemy~=1.3.5
+pyperclip
 
 pytest
 mypy
 pylint
+behave
+tabulate

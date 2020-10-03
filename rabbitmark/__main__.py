@@ -8,10 +8,11 @@ for relicensing under some FOSS license).
 
 import sys
 
-from .gui import main_window
+from . import cli
+from . import gui
 
 
 if len(sys.argv) > 1:
-    raise NotImplementedError("The CLI is not yet implemented.")
+    print(cli.call())
 else:
-    main_window.start()
+    gui.main_window.start()
