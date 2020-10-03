@@ -25,7 +25,9 @@ def find_handler(session, args: argparse.Namespace) -> str:
     mode = SearchMode.And if getattr(args, 'and') else SearchMode.Or
 
     marks = bookmark.find_bookmarks(session, filter_text, tags, True, mode)
-    result_rows = [(i.id, i.name, ', '.join(str(j) for j in i.tags)) for i in marks]
+    result_rows = sorted(
+        ((i.id, i.name, ', '.join(str(j) for j in i.tags)) for i in marks),
+        key=lambda i: i[1])
     headers = ["ID", "Name", "Tags"]
     return tabulate(result_rows, headers)
 

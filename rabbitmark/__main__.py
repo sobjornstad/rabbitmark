@@ -8,11 +8,11 @@ for relicensing under some FOSS license).
 
 import sys
 
-from . import cli
-from . import gui
+import rabbitmark.cli
+import rabbitmark.gui.main_window
 
 
 if len(sys.argv) > 1:
-    print(cli.call())
+    print(rabbitmark.cli.call())
 else:
-    gui.main_window.start()
+    rabbitmark.gui.main_window.start()
