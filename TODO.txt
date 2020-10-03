@@ -7,7 +7,6 @@ Refactor:
 
 Implement:
     * Have a way to actually log in to Pocket, rather than having to manually run the OAuth flow and add the key in the database
-    * New/Open (?). At any rate don't hard-code the database file
     * Help menu options (fix links)
     * CSV dupe detection should use URLs, not names.
 

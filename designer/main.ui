@@ -232,9 +232,6 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="actionNew_database"/>
-    <addaction name="actionOpen_database"/>
-    <addaction name="separator"/>
     <addaction name="actionShowPrivate"/>
     <addaction name="separator"/>
     <addaction name="actionImport_CSV"/>
