@@ -56,7 +56,7 @@ def maybe_expunge_tag(session, tag: Tag) -> bool:
 
 def merge_tags(session, from_name: str, into_name: str) -> bool:
     """
-    Merge the tag from_name into to_name. If the target already exists,
+    Merge the tag from_name into to_name. If the target doesn't exist,
     DWIM and do a rename instead.
     """
     from_tag = session.query(Tag).filter(Tag.text == from_name).one()

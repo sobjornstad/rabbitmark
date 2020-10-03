@@ -78,7 +78,7 @@ def add_url(pconf: PocketConfig, mark: Bookmark,
     Add the URL of a bookmark to the user's Pocket reading list.
 
     Parameters:
-        config - An instance of PocketConfig, containing the API keys, etc.
+        pconf - An instance of PocketConfig, containing the API keys, etc.
         mark - A bookmark to send to Pocket.
         tags - Iterable of Pocket tags to assign to the new item.
             These need not correspond with RabbitMark tags.

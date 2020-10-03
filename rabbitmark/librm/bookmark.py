@@ -138,7 +138,6 @@ def find_bookmarks(session,
     relationships, so we have to compare on the text of the tags. Conveniently,
     we are given those already!
     """
-
     query = session.query(Bookmark).filter(
         or_(Bookmark.name.like(filter_text),
             Bookmark.url.like(filter_text),

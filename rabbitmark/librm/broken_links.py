@@ -90,7 +90,7 @@ def scan(session, callback: Callable[[int, int, LinkCheck], None],
     the total number of items, and the LinkCheck object.
 
     If /only_failures/ is set, only items which have failed will trigger a
-    callback. The items with no issues will never be returned to the caller.
+    callback; the items with no issues will never be returned to the caller.
     """
     # pylint: disable=singleton-comparison
     marks = session.query(Bookmark).filter(Bookmark.skip_linkcheck == False).all()
