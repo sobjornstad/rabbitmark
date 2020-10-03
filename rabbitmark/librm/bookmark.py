@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterable, Optional, Sequence
 
 from sqlalchemy import or_
 
-from ..utils import NOTAGS, SearchMode
+from rabbitmark.definitions import NOTAGS, SearchMode
 from .models import Bookmark, Tag
 from .tag import maybe_expunge_tag, change_tags
 

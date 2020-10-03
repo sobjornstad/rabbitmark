@@ -4,7 +4,7 @@ tag.py -- RabbitMark tag operations
 
 from typing import Sequence
 
-from ..utils import NOTAGS
+from rabbitmark.definitions import NOTAGS
 from .models import Tag, Bookmark
 
 

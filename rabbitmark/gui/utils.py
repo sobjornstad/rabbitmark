@@ -12,14 +12,6 @@ from typing import Any, Dict, Tuple
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
 
-NOTAGS = "(no tags)"
-DATE_FORMAT = '%Y-%m-%d'
-
-@unique
-class SearchMode(Enum):
-    Or = 0
-    And = 1
-
 
 def _box(text: str, title: str, icon: QMessageBox.Icon) -> QMessageBox:
     "Helper function to do most of the work of setting up a standard message box."

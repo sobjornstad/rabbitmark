@@ -9,9 +9,9 @@ from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import pyqtSignal, QThread, QUrl
 
-from .librm import bookmark
-from .librm import broken_links
-from .librm.broken_links import LinkCheck
+from ..librm import bookmark
+from ..librm import broken_links
+from ..librm.broken_links import LinkCheck
 
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .forms.linkcheck import Ui_Dialog as Ui_LinkCheckDialog

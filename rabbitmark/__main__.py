@@ -8,7 +8,7 @@ for relicensing under some FOSS license).
 
 import sys
 
-from . import main_window
+from .gui import main_window
 
 
 if len(sys.argv) > 1:

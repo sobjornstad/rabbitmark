@@ -9,7 +9,7 @@ from PyQt5.QtCore import QUrl, Qt
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import QApplication, QDialog, QTableWidgetItem, QComboBox
 
-from .librm import interchange
+from ..librm import interchange
 
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .forms.import_map import Ui_Dialog as ImportMappingForm

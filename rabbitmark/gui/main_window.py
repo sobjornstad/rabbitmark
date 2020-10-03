@@ -10,26 +10,24 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut, QDialog, QFile
 from PyQt5.QtGui import QDesktopServices, QKeySequence, QCursor
 from PyQt5.QtCore import Qt, QUrl
 
+from rabbitmark.definitions import MYVERSION, SearchMode
+from rabbitmark.librm import bookmark
+from rabbitmark.librm import config
+from rabbitmark.librm import database
+from rabbitmark.librm import interchange
+from rabbitmark.librm import pocket
+from rabbitmark.librm import tag as tag_ops
+from rabbitmark.librm.wayback_snapshot import request_snapshot
+
 from .bookmark_table import BookmarkTableModel
 from .forms.main import Ui_MainWindow
 from .forms.about import Ui_Dialog as AboutForm
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
-from .librm import bookmark
-from .librm import config
-from .librm import database
-from .librm import interchange
-from .librm import pocket
-from .librm import tag as tag_ops
-from .librm.wayback_snapshot import request_snapshot
 from . import import_dialog
 from . import pocket_import_dialog
 from . import link_check_dialog
 from . import wayback_search_dialog
 from . import utils
-
-
-# TODO: Centralize
-MYVERSION = "0.1.0"
 
 
 class MainWindow(QMainWindow):
@@ -83,7 +81,7 @@ class MainWindow(QMainWindow):
         findShortcut.activated.connect(self.onFocusFind)
 
         # Set up tag mode dropdown.
-        # Indexes of these options should match with utils.SearchMode.
+        # Indexes of these options should match with SearchMode.
         sf.tagsModeDropdown.addItem("Require at least one selected tag (OR)")
         sf.tagsModeDropdown.addItem("Require all selected tags (AND)")
         sf.tagsModeDropdown.activated.connect(self._updateForSearch)
@@ -115,8 +113,8 @@ class MainWindow(QMainWindow):
 
 
     ### Helper methods ###
-    def _currentSearchMode(self) -> utils.SearchMode:
-        return utils.SearchMode(self.form.tagsModeDropdown.currentIndex())
+    def _currentSearchMode(self) -> SearchMode:
+        return SearchMode(self.form.tagsModeDropdown.currentIndex())
 
     def _getSingleTagName(self) -> Optional[str]:
         """
@@ -156,7 +154,7 @@ class MainWindow(QMainWindow):
         self.form.searchBox.setText("")
         self._updateForSearch()
         # If in AND mode, turn off "no tags" mode, or it similarly won't be visible.
-        if self._currentSearchMode() == utils.SearchMode.And:
+        if self._currentSearchMode() == SearchMode.And:
             self.form.tagList.item(0).setSelected(False)
 
         newBookmark = bookmark.add_bookmark(self.session, url, tags)

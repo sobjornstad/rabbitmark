@@ -9,9 +9,9 @@ from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5.QtGui import QDesktopServices, QCursor
 from PyQt5.QtCore import pyqtSignal, QThread, QUrl, Qt
 
-from .librm import bookmark
-from .librm import config
-from .librm import pocket
+from ..librm import bookmark
+from ..librm import config
+from ..librm import pocket
 
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from .forms.pocket_import import Ui_Dialog as Ui_PocketImportDialog

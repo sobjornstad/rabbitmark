@@ -5,7 +5,7 @@ setup.py -  setuptools configuration for esc
 import setuptools
 
 # pylint: disable=invalid-name
-long_description = "my des"
+long_description = "RabbitMark is a dumb bookmark manager."
 #with open("README.md", "r") as fh:
 #    long_description = fh.read()
 
@@ -17,7 +17,7 @@ setuptools.setup(
     description="a dumb bookmark manager",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://google.com",
+    url="https://github.com/sobjornstad/rabbitmark",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

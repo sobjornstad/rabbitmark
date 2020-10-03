@@ -11,8 +11,8 @@ from PyQt5.QtGui import QDesktopServices, QCursor
 from PyQt5.QtCore import QUrl, Qt
 
 from .forms.archivesearch import Ui_Dialog as Ui_ArchiveDialog
-from .librm import binary_search
-from .librm import wayback_snapshot
+from ..librm import binary_search
+from ..librm import wayback_snapshot
 from . import utils
 
 

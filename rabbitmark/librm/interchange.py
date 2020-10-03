@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import bookmark
-from ..utils import SearchMode
+from rabbitmark.definitions import SearchMode
 
 
 @dataclass
