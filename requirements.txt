@@ -3,6 +3,7 @@ requests~=2.21.0
 SQLAlchemy~=1.3.5
 pyperclip
 
+types-sqlalchemy
 pytest
 mypy
 pylint
