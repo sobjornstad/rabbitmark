@@ -14,7 +14,7 @@ setuptools.setup(
     version="0.1.0",
     author="Soren I. Bjornstad",
     author_email="contact@sorenbjornstad.com",
-    description="a dumb bookmark manager",
+    description="powerful tag-based bookmark manager for the desktop",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/sobjornstad/rabbitmark",
@@ -29,6 +29,10 @@ setuptools.setup(
     install_requires=[
         'windows-curses; platform_system == "Windows"',
     ],
-    #scripts=['package_scripts/esc'],
-    python_requires='>=3.6',
+    entry_points={
+        "console_scripts": [
+            "rabbitmark = rabbitmark.__main__",
+        ],
+    },
+    python_requires='>=3.7',
 )
