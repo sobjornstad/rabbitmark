@@ -60,7 +60,7 @@ def copy_handler(session, args: argparse.Namespace) -> None:
 
 def get_parser() -> argparse.ArgumentParser:
     "Create the command-line parser."
-    parser = argparse.ArgumentParser(description="RabbitMark CLI")
+    parser = argparse.ArgumentParser(description="RabbitMark CLI (use 'rabbitmark' alone to launch the GUI)")
     subparsers = parser.add_subparsers()
 
     find = subparsers.add_parser('find', help="List bookmarks matching a search query")
