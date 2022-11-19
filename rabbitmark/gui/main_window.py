@@ -1,7 +1,7 @@
 """
 main_window.py -- RabbitMark Qt application, application window
 """
-
+import os
 import sys
 from typing import NoReturn, Optional
 
@@ -57,7 +57,6 @@ class MainWindow(QMainWindow):
         sf.actionDelete.triggered.connect(self.onDeleteBookmark)
         sf.actionCopyUrl.triggered.connect(self.onCopyUrl)
         sf.actionBrowseToUrl.triggered.connect(self.onBrowseForUrl)
-        sf.actionSendToPocket.triggered.connect(self.onSendToPocket)
         sf.actionSnapshotSite.triggered.connect(self.onSnapshotSite)
 
         # Tag menu
@@ -67,7 +66,6 @@ class MainWindow(QMainWindow):
 
         # Tools menu
         sf.actionBrokenLinks.triggered.connect(self.onCheckBrokenLinks)
-        sf.actionImportFromPocket.triggered.connect(self.onImportFromPocket)
 
         # Help menu
         sf.actionContents.triggered.connect(self.onHelpContents)
@@ -78,6 +76,17 @@ class MainWindow(QMainWindow):
         sf.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         sf.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
         sf.tagsInvertButton.clicked.connect(lambda: self.tagsSelect('invert'))
+
+        # Experimental Pocket integration with missing authentication flow
+        # I REALLY hope they come up with a device flow or something. Authentication
+        # is maddening in a desktop app with the only OAuth2 flow supported right now.
+        # I've tried to implement this twice and given up both times.
+        if os.environ.get("RABBITMARK_POCKET_INTEGRATION", None) is None:
+            sf.actionSendToPocket.setVisible(False)
+            sf.actionImportFromPocket.setVisible(False)
+        else:
+            sf.actionSendToPocket.triggered.connect(self.onSendToPocket)
+            sf.actionImportFromPocket.triggered.connect(self.onImportFromPocket)
 
         findShortcut = QShortcut(QKeySequence("Ctrl+F"), sf.searchBox)
         findShortcut.activated.connect(self.onFocusFind)
