@@ -23,6 +23,7 @@ for i in "$compile_from"/*.ui; do
         pyuic5 "$i" -o "$compile_to/$moduleName.py"
     fi
 done
+touch "$compile_to/__init__.py"
 
 if [ $didUpdate -ne 1 ]; then
     echo "  No forms to update."

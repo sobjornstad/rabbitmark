@@ -2,7 +2,7 @@
 *.db-shm*
 *.db-wal*
 *.pyc
-rabbitmark/forms/*
+rabbitmark/gui/forms/*
 __pycache__/
 .mypy_cache/
 .pytest_cache/
@@ -10,3 +10,5 @@ venv/
 *.egg-info/
 .vscode/
 .pypi_token
+build/
+dist/

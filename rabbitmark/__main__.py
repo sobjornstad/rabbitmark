@@ -12,7 +12,10 @@ import rabbitmark.cli
 import rabbitmark.gui.main_window
 
 
-if len(sys.argv) > 1:
-    print(rabbitmark.cli.call())
-else:
-    rabbitmark.gui.main_window.start()
+def main():
+    if len(sys.argv) > 1:
+        print(rabbitmark.cli.call())
+    else:
+        rabbitmark.gui.main_window.start()
+
+main()
