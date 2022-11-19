@@ -30,8 +30,10 @@ from . import wayback_search_dialog
 from . import utils
 
 
+# pylint: disable=too-many-instance-attributes, too-many-public-methods
 class MainWindow(QMainWindow):
     "RabbitMark application window."
+    # pylint: disable=too-many-statements
     def __init__(self, sessionmaker) -> None:
         QMainWindow.__init__(self)
         self.form = Ui_MainWindow()
@@ -99,6 +101,7 @@ class MainWindow(QMainWindow):
         for i in self.tags:
             self.form.tagList.addItem(i)
         self.form.tagList.sortItems()
+        self.form.tagList.itemSelectionChanged.connect(self.onCheckOptionAvailability)
 
         # set up details form
         self.detailsForm = BookmarkDetailsWidget()
@@ -188,6 +191,7 @@ class MainWindow(QMainWindow):
 
         self.tableView.setCurrentIndex(idx)
         self.fillEditPane()
+        self.onCheckOptionAvailability()  # after resetting the edit pane
 
     def _resetTagList(self) -> None:
         """
@@ -556,6 +560,35 @@ class MainWindow(QMainWindow):
                 self.form.okButton.clicked.connect(self.accept)
         dlg = AboutWindow()
         dlg.exec_()
+
+    def onCheckOptionAvailability(self) -> None:
+        "Update the enabled/disabled state of menus based on the current selection."
+        sf = self.form
+
+        bookmarkActions = (
+            sf.actionWayBack,
+            sf.actionDelete,
+            sf.actionCopyUrl,
+            sf.actionBrowseToUrl,
+            sf.actionSendToPocket,
+            sf.actionSnapshotSite,
+        )
+        tagActions = (
+            sf.actionRenameTag,
+            sf.actionDeleteTag,
+            sf.actionMergeTag,
+        )
+
+        bookmarkSelected = bool(self.tableModel.getObj(self.tableView.currentIndex()))
+        tagSelList = self.form.tagList.selectedItems()
+        tagSelected = bool(tagSelList) and not tagSelList[0].text() == NOTAGS
+        multipleTagsSelected = len(tagSelList) > 1
+
+        for action in bookmarkActions:
+            action.setEnabled(bookmarkSelected)
+        for action in tagActions:
+            action.setEnabled(tagSelected and not multipleTagsSelected)
+
 
     # Named by convention.
     #pylint: disable=unused-argument

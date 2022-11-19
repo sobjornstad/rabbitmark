@@ -1,5 +1,4 @@
 Bugfixes:
-    * Grey out menu items when they're not usable (esp. for Tags menu)
     * Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
 
 Refactor:
