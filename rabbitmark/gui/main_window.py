@@ -548,13 +548,13 @@ class MainWindow(QMainWindow):
     def onHelpContents() -> None:
         "Display the manual."
         # TODO: Update with real URL
-        QDesktopServices.openUrl(QUrl("https://google.com"))
+        QDesktopServices.openUrl(QUrl("https://github.com/sobjornstad/rabbitmark#readme"))
 
     @staticmethod
     def onReportBug() -> None:
         "Open the GitHub issues page."
         # TODO: Update with real URL
-        QDesktopServices.openUrl(QUrl("https://yahoo.com"))
+        QDesktopServices.openUrl(QUrl("https://github.com/sobjornstad/rabbitmark/issues/new"))
 
     def onAbout(self) -> None:
         "Load the About screen to display metadata on and an description of RabbitMark."
