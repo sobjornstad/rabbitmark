@@ -47,12 +47,12 @@ def make_Session() -> SessionType:
     if path_from_env:
         database_path = path_from_env
     else:
-        database_path = str(_get_datadir())
+        folder = str(_get_datadir())
+        if not os.path.isdir(folder):
+            os.mkdir(folder)
+        database_path = folder + "/rabbitmark.db"
 
-    if not os.path.isdir(database_path):
-        os.mkdir(database_path)
-
-    sqlite_uri = f"sqlite:///{database_path}/rabbitmark.db"
+    sqlite_uri = f"sqlite:///{database_path}"
     engine = create_engine(sqlite_uri)
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine) # will not recreate existing tables/dbs
