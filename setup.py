@@ -6,9 +6,8 @@ import setuptools
 from rabbitmark.definitions import MYVERSION
 
 # pylint: disable=invalid-name
-long_description = "RabbitMark is a dumb bookmark manager."
-#with open("README.md", "r") as fh:
-#    long_description = fh.read()
+with open("README.md", "r") as fh:
+    long_description = fh.read()
 
 setuptools.setup(
     name="rabbitmark",
