@@ -7,7 +7,6 @@ Refactor:
 Implement:
     * Have a way to actually log in to Pocket, rather than having to manually run the OAuth flow and add the key in the database
     * Help menu options (fix links)
-    * CSV dupe detection should use URLs, not names.
 
 Possible ideas:
     * Allow items in the Skip column of the Pocket import to be viewed in the preview pane.

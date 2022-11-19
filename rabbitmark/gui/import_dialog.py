@@ -168,7 +168,7 @@ class ImportDialog(QDialog):
         if duplicated > 0:
             ess = '' if duplicated == 1 else 's'
             msg += (f" {duplicated} bookmark{ess} "
-                    f"with name{ess} already in collection ignored.")
+                    f"with URL{ess} already in collection ignored.")
         utils.informationBox(msg)
 
     def onMappingChanged(self, _new_index) -> None:

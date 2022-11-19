@@ -105,7 +105,7 @@ def import_bookmarks_from_csv(session, target_path: str, dialect,
             # If the bookmark exists already, ignore it.
             # TODO: It would be nice to report the content so the user can see
             # if there's an issue.
-            if bookmark.name_exists(session, mark_data['name']):
+            if bookmark.url_exists(session, mark_data['url']):
                 dupes += 1
                 continue
 
