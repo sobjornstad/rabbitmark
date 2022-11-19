@@ -232,7 +232,7 @@ class LinkCheckProgressDialog(QDialog):
         self.form.okLabel.setText(f"OK: {success}")
         self.form.failedLabel.setText(f"Failed: {fail}")
         self.form.totalLabel.setText(f"Total: {tot}")
-        self.form.progressBar.setValue((success + fail) * 100 / tot)
+        self.form.progressBar.setValue(int((success + fail) * 100 / tot))
         self.form.progressLog.appendPlainText(log)
 
     def join_thread(self) -> None:

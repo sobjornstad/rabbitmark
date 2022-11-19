@@ -247,12 +247,12 @@
     <addaction name="actionNew_from_clipboard"/>
     <addaction name="separator"/>
     <addaction name="actionWayBack"/>
+    <addaction name="actionSnapshotSite"/>
     <addaction name="actionDelete"/>
     <addaction name="separator"/>
     <addaction name="actionCopyUrl"/>
     <addaction name="actionBrowseToUrl"/>
     <addaction name="actionSendToPocket"/>
-    <addaction name="actionSnapshotSite"/>
    </widget>
    <widget class="QMenu" name="menuTag">
     <property name="title">
