@@ -9,3 +9,4 @@ __pycache__/
 venv/
 *.egg-info/
 .vscode/
+.pypi_token
