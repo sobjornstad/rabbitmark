@@ -82,7 +82,8 @@ def _check(pk: int, name: str, url: str) -> LinkCheck:
 
 
 def scan(session, callback: Callable[[int, int, LinkCheck], None],
-         only_failures: bool = False) -> None:
+         only_failures: bool = False,
+         canceled: Optional[Callable[[], bool]] = None) -> None:
     """
     Retrieve all bookmarks from the session /session/ and check their URLs in
     parallel. Whenever a result comes back, call the /callback/ function of
@@ -91,6 +92,10 @@ def scan(session, callback: Callable[[int, int, LinkCheck], None],
 
     If /only_failures/ is set, only items which have failed will trigger a
     callback; the items with no issues will never be returned to the caller.
+
+    If /canceled/ is provided, it is called before processing each result.
+    When it returns True, remaining futures are canceled and the scan exits
+    early. Already-running requests finish naturally (bounded by their timeout).
     """
     # pylint: disable=singleton-comparison
     marks = session.query(Bookmark).filter(Bookmark.skip_linkcheck == False).all()
@@ -102,5 +107,9 @@ def scan(session, callback: Callable[[int, int, LinkCheck], None],
             futures.append(future)
 
         for idx, fut in enumerate(concurrent.futures.as_completed(futures), 1):
+            if canceled is not None and canceled():
+                for f in futures:
+                    f.cancel()
+                break
             if (not fut.result().successful) or (not only_failures):
                 callback(idx, len(marks), fut.result())

@@ -8,6 +8,7 @@
 - [ ] Remove Pocket integration, as Pocket does not exist anymore
 - [ ] Clean up where committing and flushing is done
 - [ ] General refactoring (combine with other tasks as possible)
+- [ ] Fix some linter errors (and maybe switch to pyright)
 
 
 ## Features (probably do)

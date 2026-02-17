@@ -196,7 +196,8 @@ class LinkCheckThread(QThread):
 
         try:
             session = self.sessionmaker()
-            broken_links.scan(session, callback, only_failures=False)
+            broken_links.scan(session, callback, only_failures=False,
+                              canceled=self.isInterruptionRequested)
             session.close()
         except Exception as e:  # pylint: disable=broad-except
             self.exception = e
@@ -235,6 +236,12 @@ class LinkCheckProgressDialog(QDialog):
         self.form.progressBar.setValue(int((success + fail) * 100 / tot))
         self.form.progressLog.appendPlainText(log)
 
+    def reject(self) -> None:
+        "Signal the thread to stop scanning and close the dialog."
+        if self.lct is not None:
+            self.lct.requestInterruption()
+        super().reject()
+
     def join_thread(self) -> None:
         """
         Clean up when the worker thread terminates. Gather up the results,
@@ -244,6 +251,9 @@ class LinkCheckProgressDialog(QDialog):
         the user of this dialog can grab them. Then accept the dialog.
         """
         assert self.lct is not None, "Tried to join a not-started thread!"
+        if self.lct.isInterruptionRequested():
+            return
+
         if self.lct.exception:
             self.reject()
             raise self.lct.exception
