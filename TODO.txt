@@ -1,17 +1,16 @@
 ## Bugs
 
+- [ ] (no tags) can appear below other items (e.g., _something)
+- [ ] Also probably don’t show (no tags) if there aren’t any items with no tags?
 
 ## Refactor
 
 - [ ] Clean up where committing and flushing is done
 - [ ] General refactoring (combine with other tasks as possible)
-- [ ] Fix some linter errors (and maybe switch to pyright)
+- [ ] Check TODO comments etc.
 
 
 ## Features (probably do)
-
-- [ ] Add a check to determine if archive.org URL is *already* used, and if so to strip out the non-archive.org part and/or do a new snapshot search.
-- [ ] Add keyboard navigation for tags
 
 
 ## Features (possible)

@@ -603,7 +603,10 @@ dev = [
     { name = "mypy" },
     { name = "pylint" },
     { name = "pytest" },
+    { name = "types-pyperclip" },
+    { name = "types-requests" },
     { name = "types-sqlalchemy" },
+    { name = "types-tabulate" },
 ]
 
 [package.metadata]
@@ -621,7 +624,10 @@ dev = [
     { name = "mypy" },
     { name = "pylint" },
     { name = "pytest" },
+    { name = "types-pyperclip" },
+    { name = "types-requests" },
     { name = "types-sqlalchemy" },
+    { name = "types-tabulate" },
 ]
 
 [[package]]
@@ -749,12 +755,42 @@ wheels = [
 ]
 
 [[package]]
+name = "types-pyperclip"
+version = "1.11.0.20260216"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/50/0a/7660dac5c36c9848f9de204411b567558d545529a9d63be1ad25c4eacf1e/types_pyperclip-1.11.0.20260216.tar.gz", hash = "sha256:32fdef1b265cb1f06622728b719fb0ad622cef0bb10a081a7423c194ac4ae68f", size = 7274, upload-time = "2026-02-16T04:11:43.623Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0e/ba/e09c4071f3faae398789c4d8132ed62392ddd24373f55d61643772592c84/types_pyperclip-1.11.0.20260216-py3-none-any.whl", hash = "sha256:7499782ee5b87a3e73f644df4b7d0140f7d41b894806e456adfaf086cfeb390f", size = 7633, upload-time = "2026-02-16T04:11:42.445Z" },
+]
+
+[[package]]
+name = "types-requests"
+version = "2.32.4.20260107"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0f/f3/a0663907082280664d745929205a89d41dffb29e89a50f753af7d57d0a96/types_requests-2.32.4.20260107.tar.gz", hash = "sha256:018a11ac158f801bfa84857ddec1650750e393df8a004a8a9ae2a9bec6fcb24f", size = 23165, upload-time = "2026-01-07T03:20:54.091Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1c/12/709ea261f2bf91ef0a26a9eed20f2623227a8ed85610c1e54c5805692ecb/types_requests-2.32.4.20260107-py3-none-any.whl", hash = "sha256:b703fe72f8ce5b31ef031264fe9395cac8f46a04661a79f7ed31a80fb308730d", size = 20676, upload-time = "2026-01-07T03:20:52.929Z" },
+]
+
+[[package]]
 name = "types-sqlalchemy"
 version = "1.4.53.38"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ab/ce/0b7fa93dbc49b328807dedef8006223129e5a9543c74727dd7658eca5a9d/types-SQLAlchemy-1.4.53.38.tar.gz", hash = "sha256:5bb7463537e04e1aa5a3557eb725930df99226dcfd3c9bf93008025bfe5c169e", size = 118888, upload-time = "2023-05-01T15:15:28.572Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1a/4f/033a839a35ecbc5f71c0d74655d1237e909651aaebe7ceb825ac45cfdb4b/types_SQLAlchemy-1.4.53.38-py3-none-any.whl", hash = "sha256:7e60e74f823931cc9a9e8adb0a4c05e5533e6708b8a266807893a739faf4eaaa", size = 187916, upload-time = "2023-05-01T15:15:26.02Z" },
+]
+
+[[package]]
+name = "types-tabulate"
+version = "0.9.0.20241207"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/43/16030404a327e4ff8c692f2273854019ed36718667b2993609dc37d14dd4/types_tabulate-0.9.0.20241207.tar.gz", hash = "sha256:ac1ac174750c0a385dfd248edc6279fa328aaf4ea317915ab879a2ec47833230", size = 8195, upload-time = "2024-12-07T02:54:42.554Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5e/86/a9ebfd509cbe74471106dffed320e208c72537f9aeb0a55eaa6b1b5e4d17/types_tabulate-0.9.0.20241207-py3-none-any.whl", hash = "sha256:b8dad1343c2a8ba5861c5441370c3e35908edd234ff036d4298708a1d4cf8a85", size = 8307, upload-time = "2024-12-07T02:54:41.031Z" },
 ]
 
 [[package]]

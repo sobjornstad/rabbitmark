@@ -2,10 +2,12 @@
 config.py - manage config values
 """
 
+from typing import Optional
+
 from .models import Config
 
 
-def get(session, key: str) -> str:
+def get(session, key: str) -> Optional[str]:
     """
     Retrieve the stringly-typed value of a configuration key,
     or None if it is NULL or doesn't exist.

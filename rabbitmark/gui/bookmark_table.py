@@ -31,48 +31,43 @@ class BookmarkTableModel(QAbstractTableModel):
             Given a Bookmark object,
             return the data from it that this column should contain.
             """
-            # false positive
-            # pylint: disable=comparison-with-callable
             if self.name == 'Name':
                 return bookmark.name
             elif self.name == 'Tags':
                 return ', '.join(i.text for i in bookmark.tags)
-            raise AssertionError("Model column %i not defined in data()"
-                                 % self.value)
+            raise AssertionError(f"Model column {self.value} not defined in data()")
 
-        #pylint: disable=superfluous-parens
         def sort_function(self) -> Callable[[Bookmark], Any]:
             "Return a key function that will sort this column correctly."
-            # false positive
-            # pylint: disable=comparison-with-callable
             if self.name == 'Name':
-                return (lambda i: i.name)
+                return lambda i: i.name
             elif self.name == 'Tags':
-                return (lambda i: ', '.join(sorted(t.text for t in i.tags)).casefold())
+                return lambda i: ', '.join(sorted(t.text for t in i.tags)).casefold()
             else:
                 raise AssertionError(
-                    "Model column %i not defined in sort_function()"
-                    % self.value)
+                    f"Model column {self.value} not defined in sort_function()")
 
 
     def __init__(self, parent) -> None:
         QAbstractTableModel.__init__(self)
-        self.parent = parent
+        self._parent = parent
         self.headerdata = ("Name", "Tags")
         self.L: List[Bookmark] = []  # pylint: disable=invalid-name
         self._sort_col = 0
         self._sort_order = Qt.AscendingOrder
 
     ### Standard reimplemented methods ###
-    def rowCount(self, parent) -> int: #pylint: disable=no-self-use,unused-argument
+    def rowCount(self, _parent: Any = None) -> int:
         return len(self.L)
-    def columnCount(self, parent) -> int: #pylint: disable=no-self-use,unused-argument
+    def columnCount(self, _parent: Any = None) -> int:
         return len(self.headerdata)
 
-    def flags(self, index) -> Any: #pylint: disable=no-self-use,unused-argument
+    def flags(self, _index) -> Any:
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
-    def headerData(self, col, orientation, role) -> Optional[str]:
+    def headerData(  # type: ignore[override]
+        self, col, orientation, role
+    ) -> Optional[str]:
         "Return headers for the model table."
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headerdata[col]
@@ -94,7 +89,7 @@ class BookmarkTableModel(QAbstractTableModel):
         "Re-sort the model data by the given column and ordering."
         self._sort_col = col
         self._sort_order = order
-        rev = (order != Qt.AscendingOrder)
+        rev = order != Qt.AscendingOrder
         self.layoutAboutToBeChanged.emit()
         self.L.sort(key=self.ModelColumn(col).sort_function(), reverse=rev)
         self.layoutChanged.emit()

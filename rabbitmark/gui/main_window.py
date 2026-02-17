@@ -245,8 +245,7 @@ class MainWindow(QMainWindow):
         Change the count of matching items that appears in the title bar to
         /count/.
         """
-        self.setWindowTitle("RabbitMark - %i match%s" % (
-            count, '' if count == 1 else 'es'))
+        self.setWindowTitle(f"RabbitMark - {count} match{'' if count == 1 else 'es'}")
 
     def _updateForSearch(self, *_args, fill_edit_pane=True) -> None:
         """
@@ -385,7 +384,8 @@ class MainWindow(QMainWindow):
 
     def onAddBookmarkFromClipboard(self) -> None:
         "Create a new bookmark from the URL on the clipboard."
-        pastedUrl = str(QApplication.clipboard().text()).strip()
+        clipboard = QApplication.clipboard()
+        pastedUrl = str(clipboard.text()).strip()  # type: ignore[union-attr]
         if '://' not in pastedUrl:
             utils.warningBox("No protocol (e.g., http://) in URL. Adding "
                              "http:// to beginning. You may wish to check "
@@ -397,7 +397,8 @@ class MainWindow(QMainWindow):
         QDesktopServices.openUrl(QUrl(self.detailsForm.urlBox.text()))
 
     def onCopyUrl(self) -> None:
-        QApplication.clipboard().setText(self.detailsForm.urlBox.text())
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.detailsForm.urlBox.text())  # type: ignore[union-attr]
 
     def onDeleteBookmark(self) -> None:
         "Delete the selected bookmark."

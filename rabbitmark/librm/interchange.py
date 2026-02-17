@@ -29,7 +29,7 @@ def export_bookmarks_to_csv(session, target_path: str) -> int:
     Raises:
         Any file handling errors that may occur.
     """
-    with open(target_path, "w") as f:
+    with open(target_path, "w", encoding="utf-8") as f:
         names = ["name", "url", "description", "tags"]
         writer = csv.DictWriter(f, fieldnames=names, delimiter=',', quotechar='"')
         writer.writeheader()
@@ -51,14 +51,16 @@ def get_csv_schema(target_path: str) -> CsvSchema:
     format of the file, including its 'csv' module dialect, its column names,
     and the first row of data as a preview.
     """
-    with open(target_path, 'r', newline='') as f:
+    with open(target_path, 'r', newline='', encoding="utf-8") as f:
         sample = f.readline()
         dialect = csv.Sniffer().sniff(sample)
 
         f.seek(0)
         reader = csv.DictReader(f, dialect=dialect)
         first_data_row = next(reader)
-        return CsvSchema(dialect, reader.fieldnames, first_data_row)
+        return CsvSchema(
+            dialect, reader.fieldnames, first_data_row  # type: ignore[arg-type]
+        )
 
 
 def import_bookmarks_from_csv(session, target_path: str, dialect,
@@ -84,7 +86,7 @@ def import_bookmarks_from_csv(session, target_path: str, dialect,
     Raises:
         Any file handling errors that may occur.
     """
-    with open(target_path, 'r', newline='') as f:
+    with open(target_path, 'r', newline='', encoding="utf-8") as f:
         reader = csv.reader(f, dialect=dialect)
         _ = next(reader)  # skip past header row
 

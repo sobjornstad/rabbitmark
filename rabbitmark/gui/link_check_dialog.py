@@ -29,7 +29,7 @@ class LinkCheckDialog(QDialog):
         QDialog.__init__(self)
         self.form = Ui_LinkCheckDialog()
         self.form.setupUi(self)
-        self.parent = parent
+        self._parent = parent
         self.blinks = {i.name: i for i in blinks}
         self.session = session
 
@@ -127,7 +127,8 @@ class LinkCheckDialog(QDialog):
         QDesktopServices.openUrl(QUrl(self.detailsForm.urlBox.text()))
 
     def onCopyUrl(self) -> None:
-        QApplication.clipboard().setText(self.detailsForm.urlBox.text())
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.detailsForm.urlBox.text())  # type: ignore[union-attr]
 
     def onDeleteBookmark(self):
         "Delete a broken link from the database."
@@ -213,7 +214,7 @@ class LinkCheckProgressDialog(QDialog):
         QDialog.__init__(self)
         self.form = Ui_LinkCheckProgressDialog()
         self.form.setupUi(self)
-        self.parent = parent
+        self._parent = parent
         self.sessionmaker = sessionmaker
 
         self.lct: Optional[LinkCheckThread] = None

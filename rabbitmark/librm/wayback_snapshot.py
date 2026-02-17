@@ -70,7 +70,7 @@ def get_snapshots(original_url: str) -> Sequence[WaybackSnapshot]:
         'output': 'json',
         'fl': "timestamp,original,statuscode"
     }
-    result = requests.get(CDX_SEARCH_ENDPOINT, params=params)
+    result = requests.get(CDX_SEARCH_ENDPOINT, params=params, timeout=30)
     result.raise_for_status()
 
     # If no results, .json() may raise ValueError or just return None.
@@ -96,5 +96,5 @@ def request_snapshot(url: str) -> None:
     they alluded to a private API in a blog post, but nobody ever got back to
     me.
     """
-    r = requests.get(f"https://web.archive.org/save/{url}")
+    r = requests.get(f"https://web.archive.org/save/{url}", timeout=30)
     r.raise_for_status()

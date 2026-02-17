@@ -10,7 +10,6 @@ import platform
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import Session as SessionType
 
 from .models import Base
 
@@ -41,7 +40,7 @@ def _get_datadir() -> Path:
     return path
 
 
-def make_Session() -> SessionType:
+def make_Session() -> sessionmaker:
     "Create a SQLAlchemy Session object, from which sessions can be spawned."
     path_from_env = os.environ.get("RABBITMARK_DATABASE", None)
     if path_from_env:

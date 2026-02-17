@@ -29,7 +29,7 @@ class ImportDialog(QDialog):
         QDialog.__init__(self)
         self.form = ImportMappingForm()
         self.form.setupUi(self)
-        self.parent = parent
+        self._parent = parent
         self.session = session
         self.target_path = target_path
 
@@ -178,4 +178,5 @@ class ImportDialog(QDialog):
         QDesktopServices.openUrl(QUrl(self.detailsForm.urlBox.text()))
 
     def onCopyUrl(self) -> None:
-        QApplication.clipboard().setText(self.detailsForm.urlBox.text())
+        cb = QApplication.clipboard()
+        cb.setText(self.detailsForm.urlBox.text())  # type: ignore[union-attr]

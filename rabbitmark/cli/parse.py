@@ -3,7 +3,7 @@ parse.py - parse command-line options
 """
 
 import argparse
-from typing import Sequence
+from typing import Optional, Sequence
 import webbrowser
 
 # pylint: disable=no-name-in-module
@@ -20,14 +20,14 @@ def find_handler(session, args: argparse.Namespace) -> str:
         filter_text = '%' + args.filter + '%'
     else:
         filter_text = '%'
-    
+
     tags = args.tag or []
     mode = SearchMode.And if getattr(args, 'and') else SearchMode.Or
 
     marks = bookmark.find_bookmarks(session, filter_text, tags, True, mode)
     result_rows = sorted(
         ((i.id, i.name, ', '.join(str(j) for j in i.tags)) for i in marks),
-        key=lambda i: i[1])
+        key=lambda i: i[1])  # type: ignore[arg-type, return-value]
     headers = ["ID", "Name", "Tags"]
     return tabulate(result_rows, headers)
 
@@ -39,7 +39,8 @@ def _act_on_id(session, id_, func) -> None:
     """
     mark = bookmark.get_bookmark_by_id(session, id_)
     if mark is None:
-        print("No bookmark with ID {id_} was found. (Try 'rabbitmark find'?)")
+        print(f"No bookmark with ID {id_} was found. "
+              f"(Try 'rabbitmark find'?)")
     else:
         func(mark)
 
@@ -60,7 +61,9 @@ def copy_handler(session, args: argparse.Namespace) -> None:
 
 def get_parser() -> argparse.ArgumentParser:
     "Create the command-line parser."
-    parser = argparse.ArgumentParser(description="RabbitMark CLI (use 'rabbitmark' alone to launch the GUI)")
+    parser = argparse.ArgumentParser(
+        description="RabbitMark CLI (use 'rabbitmark' alone to launch the GUI)"
+    )
     subparsers = parser.add_subparsers()
 
     find = subparsers.add_parser('find', help="List bookmarks matching a search query")
@@ -85,7 +88,7 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def call(args: Sequence[str] = None) -> str:
+def call(args: Optional[Sequence[str]] = None) -> str:
     """
     Make a call to the CLI with arguments /args/. If /args/ is not specified,
     sys.argv is used.

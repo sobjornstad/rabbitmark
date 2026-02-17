@@ -43,8 +43,22 @@ dev = [
     "pytest",
     "behave",
     "types-sqlalchemy",
+    "types-requests",
+    "types-pyperclip",
+    "types-tabulate",
 ]
 
 [tool.hatch.version]
 path = "rabbitmark/definitions.py"
 pattern = 'MYVERSION = "(?P<version>[^"]+)"'
+
+[tool.mypy]
+exclude = ["rabbitmark/gui/forms/"]
+
+[[tool.mypy.overrides]]
+module = "rabbitmark.gui.forms.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "PyQt5.*"
+follow_imports = "skip"

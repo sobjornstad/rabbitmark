@@ -7,7 +7,8 @@
       "Bash(uv run mypy:*)",
       "Bash(make ui:*)",
       "Bash(python -m mypy:*)",
-      "Bash(uv run pylint:*)"
+      "Bash(uv run pylint:*)",
+      "WebFetch(domain:readwise.io)"
     ]
   }
 }

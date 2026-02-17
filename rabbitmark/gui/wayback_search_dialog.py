@@ -48,7 +48,7 @@ class WayBackDialog(QDialog):
         QDialog.__init__(self)
         self.form = Ui_ArchiveDialog()
         self.form.setupUi(self)
-        self.parent = parent
+        self._parent = parent
 
         self.form.useRadio.setChecked(True)
         self.form.okButton.clicked.connect(self.onContinue)
@@ -128,7 +128,8 @@ class WayBackDialog(QDialog):
 
     def onCopy(self) -> None:
         "Copy URL to clipboard -- same as in MainWindow."
-        QApplication.clipboard().setText(self.form.urlBox.text())
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.form.urlBox.text())  # type: ignore[union-attr]
 
     def onContinue(self) -> None:
         """

@@ -105,7 +105,8 @@ def save_if_edited(session, existing_bookmark: Bookmark,
 
     if _dirty():
         if existing_bookmark.name != new_content['name']:
-            existing_bookmark.name = _uniquify_name(session, new_content['name'])
+            new_name = _uniquify_name(session, new_content['name'])
+            existing_bookmark.name = new_name  # type: ignore[assignment]
         existing_bookmark.description = new_content['description']
         existing_bookmark.url = new_content['url']
         existing_bookmark.private = new_content['private']
@@ -159,8 +160,8 @@ def find_bookmarks(session,
             else:
                 query = query.filter(Bookmark.tags.any(Tag.text.in_(tags)))
         else:
-            raise AssertionError("in updateForSearch(): Search mode %r "
-                                 "unimplemented" % search_mode)
+            raise AssertionError(f"in updateForSearch(): Search mode {search_mode!r} "
+                                 f"unimplemented")
 
     if not include_private:
         query = query.filter(Bookmark.private == False)

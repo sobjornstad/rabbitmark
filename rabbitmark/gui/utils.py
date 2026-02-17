@@ -62,7 +62,7 @@ def inputBox(label, title=None, defaultText=None) -> Tuple[str, bool]:
         ret = QInputDialog.getText(None, title, label, text=defaultText)
     else:
         ret = QInputDialog.getText(None, title, label)
-    return str(ret[0]), ret[1]
+    return str(ret[0]), ret[1]  # type: ignore[return-value]
 
 
 def mark_dictionary(detailsForm) -> Dict[str, Any]:
@@ -105,11 +105,11 @@ def forceExtension(filename, ext):
     Originally taken from Tabularium <https://github.com/sobjornstad/tabularium>.
     """
     # on linux, the extension might not be automatically appended
-    if not filename.endswith('.%s' % ext):
-        filename += ".%s" % ext
+    if not filename.endswith(f'.{ext}'):
+        filename += f".{ext}"
         if os.path.exists(filename):
-            r = questionBox("%s already exists.\nDo you want to "
-                            "replace it?" % filename)
+            r = questionBox(f"{filename} already exists.\nDo you want to "
+                            f"replace it?")
             if r != QMessageBox.Yes: # yes
                 return None
     return filename

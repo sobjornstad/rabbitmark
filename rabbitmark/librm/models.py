@@ -7,8 +7,6 @@ models.py - SQLAlchemy ORM database model for RabbitMark
 
 #pylint: disable=invalid-name
 
-import re
-
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import Integer, String, Boolean, Table, Column, ForeignKey
@@ -52,7 +50,7 @@ class Tag(Base):  # type: ignore
                              back_populates="tags")
 
     def __str__(self) -> str:  # pylint: disable=invalid-str-returned
-        return self.text
+        return self.text  # type: ignore[return-value]
 
     def __repr__(self) -> str:
         return f"<Tag '{self.text}'>"
