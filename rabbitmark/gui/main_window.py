@@ -12,8 +12,10 @@ from PyQt5.QtCore import Qt, QUrl
 
 from rabbitmark.definitions import MYVERSION, NOTAGS, SearchMode
 from rabbitmark.librm import bookmark
+from rabbitmark.librm import config
 from rabbitmark.librm import database
 from rabbitmark.librm import interchange
+from rabbitmark.librm import readwise
 from rabbitmark.librm import tag as tag_ops
 from rabbitmark.librm.wayback_snapshot import request_snapshot
 
@@ -55,6 +57,7 @@ class MainWindow(QMainWindow):
         sf.actionCopyUrl.triggered.connect(self.onCopyUrl)
         sf.actionBrowseToUrl.triggered.connect(self.onBrowseForUrl)
         sf.actionSnapshotSite.triggered.connect(self.onSnapshotSite)
+        sf.actionSendToReadwise.triggered.connect(self.onSendToReadwise)
 
         # Tag menu
         sf.actionRenameTag.triggered.connect(self.onRenameTag)
@@ -63,6 +66,10 @@ class MainWindow(QMainWindow):
 
         # Tools menu
         sf.actionBrokenLinks.triggered.connect(self.onCheckBrokenLinks)
+        sf.actionChangeReadwiseToken.triggered.connect(self.onChangeReadwiseToken)
+        sf.actionChangeReadwiseToken.setVisible(
+            config.exists(self.session, "readwise_api_token")
+        )
 
         # Help menu
         sf.actionContents.triggered.connect(self.onHelpContents)
@@ -445,6 +452,92 @@ class MainWindow(QMainWindow):
             "You can now search for the snapshot.")
 
 
+    # Readwise Reader
+    def _ensureReadwiseToken(self) -> Optional[str]:
+        """
+        Return the Readwise Reader API token, prompting the user to enter one
+        if it hasn't been configured yet. Returns None if the user cancels.
+        """
+        token = config.get(self.session, "readwise_api_token")
+        if token:
+            return token
+
+        utils.informationBox(
+            "You haven't yet entered a Readwise access token. You can obtain one "
+            'at <a href="https://readwise.io/access_token">https://readwise.io/access_token</a>. '
+            "After clicking OK, you'll be prompted to paste the access token.",
+            "Access Token"
+        )
+
+        token, accepted = utils.inputBox(
+            "Readwise Reader access token:",
+            "Enter Access Token"
+        )
+        if not accepted or not token.strip():
+            return None
+        else:
+            utils.informationBox(
+                "Saved access token. You can change the access token at any time "
+                "from Tools > Change Readwise Reader Access Token.",
+                "Token Saved"
+            )
+
+        token = token.strip()
+        config.put(self.session, "readwise_api_token", token)
+        self.session.commit()
+        self.form.actionChangeReadwiseToken.setVisible(True)
+        return token
+
+    def onSendToReadwise(self) -> None:
+        "Send the selected bookmark to Readwise Reader."
+        token = self._ensureReadwiseToken()
+        if token is None:
+            return
+
+        last_tags = config.get(self.session, "readwise_last_tags") or ""
+        reader_tags, accepted = utils.inputBox(
+            "Tags (comma-separated):",
+            "Send to Readwise Reader",
+            last_tags
+        )
+        if not accepted:
+            return
+
+        mark = self.tableModel.getObj(self.tableView.currentIndex())
+        tags = [t.strip() for t in reader_tags.split(",") if t.strip()]
+
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+        try:
+            readwise.save_to_reader(
+                api_token=token,
+                url=mark.url,
+                title=mark.name,
+                summary=mark.description,
+                tags=tags,
+            )
+        except Exception as e:
+            utils.errorBox(
+                f"Failed to send to Readwise Reader:\n{e}",
+                "Send to Readwise Reader")
+            return
+        finally:
+            QApplication.restoreOverrideCursor()
+
+        config.put(self.session, "readwise_last_tags", reader_tags)
+        self.session.commit()
+
+    def onChangeReadwiseToken(self) -> None:
+        "Change the stored Readwise Reader API token."
+        current = config.get(self.session, "readwise_api_token") or ""
+        new_token, accepted = utils.inputBox(
+            "Readwise Reader access token:",
+            "Change Readwise Reader Access Token",
+            current
+        )
+        if accepted:
+            config.put(self.session, "readwise_api_token", new_token.strip())
+            self.session.commit()
+
     # Tags
     def onDeleteTag(self) -> None:
         "Delete the selected tag."
@@ -457,7 +550,7 @@ class MainWindow(QMainWindow):
                              f"Are you sure you want to continue?",
                              "Delete tag?"):
             tag_ops.delete_tag(self.session, tag)
-            self.session.commit()  # pylint: disable=no-member
+            self.session.commit()
             self._resetTagList()
             self._updateForSearch()
             self.fillEditPane()
@@ -471,7 +564,7 @@ class MainWindow(QMainWindow):
         new, doContinue = utils.inputBox(f"Merge tag '{tag}' into:", "Merge tag")
         if doContinue:
             if tag_ops.merge_tags(self.session, tag, new):
-                self.session.commit()  # pylint: disable=no-member
+                self.session.commit()
                 self._resetTagList()
                 self._updateForSearch()
                 self.fillEditPane()
@@ -489,7 +582,7 @@ class MainWindow(QMainWindow):
         new, doContinue = utils.inputBox("New name for tag:", "Rename tag", tag)
         if doContinue:
             if tag_ops.rename_tag(self.session, tag, new):
-                self.session.commit()  # pylint: disable=no-member
+                self.session.commit()
                 self._resetTagList()
                 self._updateForSearch()
                 self.fillEditPane()
@@ -567,6 +660,7 @@ class MainWindow(QMainWindow):
             sf.actionCopyUrl,
             sf.actionBrowseToUrl,
             sf.actionSnapshotSite,
+            sf.actionSendToReadwise,
         )
         tagActions = (
             sf.actionRenameTag,
@@ -585,9 +679,7 @@ class MainWindow(QMainWindow):
             action.setEnabled(tagSelected and not multipleTagsSelected)
 
 
-    # Named by convention.
-    #pylint: disable=unused-argument
-    def closeEvent(self, evt) -> NoReturn:
+    def closeEvent(self, _evt) -> NoReturn:
         "Catch click of the X button, etc., and properly quit."
         self.quit()
 
@@ -598,8 +690,6 @@ class MainWindow(QMainWindow):
         self.maybeSaveBookmark(old=self.detailsForm.nameBox,
                                new=self.detailsForm.nameBox)
         # Double-check we don't have any uncommitted changes.
-        # false positive
-        # pylint: disable=no-member
         self.session.commit()
         self.session.close()
         sys.exit(0)

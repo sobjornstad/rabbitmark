@@ -11,11 +11,13 @@ from typing import Any, Dict, Tuple
 # Yet again, pylint can't seem to read PyQt5's module structure properly...
 # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
+from PyQt5.QtCore import Qt
 
-
-def _box(text: str, title: str, icon: QMessageBox.Icon) -> QMessageBox:
+def _box(text: str, title: str, icon: QMessageBox.Icon, rich_text: bool = False) -> QMessageBox:
     "Helper function to do most of the work of setting up a standard message box."
     msgBox = QMessageBox()
+    if rich_text:
+        msgBox.setTextFormat(Qt.RichText)
     msgBox.setText(text)
     msgBox.setIcon(icon)
     if title:
@@ -23,28 +25,28 @@ def _box(text: str, title: str, icon: QMessageBox.Icon) -> QMessageBox:
     return msgBox
 
 
-def informationBox(text, title=None) -> None:
+def informationBox(text, title=None, rich_text=False) -> None:
     "Show a message box with the information icon and an OK button."
-    _box(text, title, QMessageBox.Information).exec_()
+    _box(text, title, QMessageBox.Information, rich_text).exec_()
 
 
-def errorBox(text, title=None) -> None:
+def errorBox(text, title=None, rich_text=False) -> None:
     "Show a message box with the error icon and an OK button."
-    _box(text, title, QMessageBox.Critical).exec_()
+    _box(text, title, QMessageBox.Critical, rich_text).exec_()
 
 
-def warningBox(text, title=None) -> None:
+def warningBox(text, title=None, rich_text=False) -> None:
     "Show a message box with the warning icon and an OK button."
-    _box(text, title, QMessageBox.Warning).exec_()
+    _box(text, title, QMessageBox.Warning, rich_text).exec_()
 
 
-def questionBox(text, title=None) -> bool:
+def questionBox(text, title=None, rich_text=False) -> bool:
     """
     Show a message box with the question icon and Yes and No buttons.
 
     Returns True if yes pushed, False if no.
     """
-    msgBox = _box(text, title, QMessageBox.Question)
+    msgBox = _box(text, title, QMessageBox.Question, rich_text)
     msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
     msgBox.setDefaultButton(QMessageBox.No)
     return msgBox.exec_() == QMessageBox.Yes

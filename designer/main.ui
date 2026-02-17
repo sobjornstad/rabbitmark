@@ -251,6 +251,7 @@
     <addaction name="separator"/>
     <addaction name="actionWayBack"/>
     <addaction name="actionSnapshotSite"/>
+    <addaction name="actionSendToReadwise"/>
     <addaction name="actionDelete"/>
     <addaction name="separator"/>
     <addaction name="actionCopyUrl"/>
@@ -278,6 +279,7 @@
      <string>T&amp;ools</string>
     </property>
     <addaction name="actionBrokenLinks"/>
+    <addaction name="actionChangeReadwiseToken"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBookmark"/>
@@ -457,6 +459,19 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+W</string>
+   </property>
+  </action>
+  <action name="actionSendToReadwise">
+   <property name="text">
+    <string>&amp;Send to Readwise Reader...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+R</string>
+   </property>
+  </action>
+  <action name="actionChangeReadwiseToken">
+   <property name="text">
+    <string>Change Readwise Reader &amp;Access Token...</string>
    </property>
   </action>
  </widget>
