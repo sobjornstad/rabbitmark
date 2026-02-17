@@ -255,7 +255,6 @@
     <addaction name="separator"/>
     <addaction name="actionCopyUrl"/>
     <addaction name="actionBrowseToUrl"/>
-    <addaction name="actionSendToPocket"/>
    </widget>
    <widget class="QMenu" name="menuTag">
     <property name="title">
@@ -279,7 +278,6 @@
      <string>T&amp;ools</string>
     </property>
     <addaction name="actionBrokenLinks"/>
-    <addaction name="actionImportFromPocket"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBookmark"/>
@@ -453,28 +451,12 @@
     <string>Ctrl+L</string>
    </property>
   </action>
-  <action name="actionSendToPocket">
-   <property name="text">
-    <string>Send to &amp;Pocket...</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+K</string>
-   </property>
-  </action>
   <action name="actionSnapshotSite">
    <property name="text">
     <string>&amp;Request WayBackMachine Snapshot</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+W</string>
-   </property>
-  </action>
-  <action name="actionImportFromPocket">
-   <property name="text">
-    <string>Import from &amp;Pocket...</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+K</string>
    </property>
   </action>
  </widget>

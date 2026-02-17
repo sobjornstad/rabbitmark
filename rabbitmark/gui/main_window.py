@@ -1,7 +1,6 @@
 """
 main_window.py -- RabbitMark Qt application, application window
 """
-import os
 import sys
 from typing import NoReturn, Optional
 
@@ -12,10 +11,8 @@ from PyQt5.QtCore import Qt, QUrl
 
 from rabbitmark.definitions import MYVERSION, NOTAGS, SearchMode
 from rabbitmark.librm import bookmark
-from rabbitmark.librm import config
 from rabbitmark.librm import database
 from rabbitmark.librm import interchange
-from rabbitmark.librm import pocket
 from rabbitmark.librm import tag as tag_ops
 from rabbitmark.librm.wayback_snapshot import request_snapshot
 
@@ -24,7 +21,6 @@ from .forms.main import Ui_MainWindow
 from .forms.about import Ui_Dialog as AboutForm
 from .forms.bookmark_details import Ui_Form as BookmarkDetailsWidget
 from . import import_dialog
-from . import pocket_import_dialog
 from . import link_check_dialog
 from . import wayback_search_dialog
 from . import utils
@@ -76,17 +72,6 @@ class MainWindow(QMainWindow):
         sf.tagsAllButton.clicked.connect(lambda: self.tagsSelect('all'))
         sf.tagsNoneButton.clicked.connect(lambda: self.tagsSelect('none'))
         sf.tagsInvertButton.clicked.connect(lambda: self.tagsSelect('invert'))
-
-        # Experimental Pocket integration with missing authentication flow
-        # I REALLY hope they come up with a device flow or something. Authentication
-        # is maddening in a desktop app with the only OAuth2 flow supported right now.
-        # I've tried to implement this twice and given up both times.
-        if os.environ.get("RABBITMARK_POCKET_INTEGRATION", None) is None:
-            sf.actionSendToPocket.setVisible(False)
-            sf.actionImportFromPocket.setVisible(False)
-        else:
-            sf.actionSendToPocket.triggered.connect(self.onSendToPocket)
-            sf.actionImportFromPocket.triggered.connect(self.onImportFromPocket)
 
         findShortcut = QShortcut(QKeySequence("Ctrl+F"), sf.searchBox)
         findShortcut.activated.connect(self.onFocusFind)
@@ -417,31 +402,6 @@ class MainWindow(QMainWindow):
             self.detailsForm.urlBox.setText(archiveUrl)
             self.maybeSaveBookmark(self.detailsForm.urlBox, None)
 
-    def onSendToPocket(self) -> None:
-        "Send the selected bookmark to the user's Pocket account."
-        pconf = pocket.PocketConfig(self.session)
-        if not pconf.valid():
-            #TODO: Give more useful pointer to how to do this
-            utils.errorBox("Your Pocket configuration is not valid. "
-                           "Please check the configuration.")
-            return
-
-        default_tags = config.get(self.session, "pocket_last_tags") or ""
-        tags, ok = utils.inputBox(
-            "Pocket tags (comma-separated):", "Add Item to Pocket", default_tags)
-        if not ok:
-            return
-
-        mark = self.tableModel.getObj(self.tableView.currentIndex())
-        ok, err = pocket.add_url(pconf, mark, (i.strip() for i in tags.split(',')))
-        if ok:
-            utils.informationBox(
-                f'Successfully added "{mark.name}" to your reading list.')
-            config.put(self.session, "pocket_last_tags", tags)
-            self.session.commit()
-        else:
-            utils.errorBox(err)
-
     def onSnapshotSite(self) -> None:
         "Ask the WayBackMachine to take a snapshot of the selected site now."
         mark = self.tableModel.getObj(self.tableView.currentIndex())
@@ -530,12 +490,6 @@ class MainWindow(QMainWindow):
             self._updateForSearch()
             self._resetTagList()
 
-    def onImportFromPocket(self) -> None:
-        "Create new bookmarks from a search against the user's Pocket library."
-        if pocket_import_dialog.import_process(self):
-            self._updateForSearch()
-            self._resetTagList()
-
     def onTogglePrivate(self) -> None:
         """
         Choose whether to hide or show private bookmarks and tags. A tag is
@@ -580,7 +534,6 @@ class MainWindow(QMainWindow):
             sf.actionDelete,
             sf.actionCopyUrl,
             sf.actionBrowseToUrl,
-            sf.actionSendToPocket,
             sf.actionSnapshotSite,
         )
         tagActions = (

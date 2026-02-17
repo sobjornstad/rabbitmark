@@ -5,7 +5,6 @@
 
 ## Refactor
 
-- [ ] Remove Pocket integration, as Pocket does not exist anymore
 - [ ] Clean up where committing and flushing is done
 - [ ] General refactoring (combine with other tasks as possible)
 - [ ] Fix some linter errors (and maybe switch to pyright)
@@ -25,7 +24,6 @@
 - [ ] Add an option to select the tags that the current bookmark has
 - [ ] Add some sort of inter-item linkage function
 - [ ] Python library that syncs things into TiddlyWiki
-- [ ] Allow items in the Skip column of the Pocket import to be viewed in the preview pane.
 - [ ] CLI interface
 - [ ] Sync with TiddlyWiki (ideally bidirectionally?)
 - [ ] Import/export could be improved

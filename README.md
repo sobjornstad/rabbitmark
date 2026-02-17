@@ -280,19 +280,3 @@ If you'd like the database to be stored somewhere else,
 RabbitMark will create this file on startup if it doesn't exist
     (but any parent folders need to exist).
 
-RabbitMark has an experimental, undocumented Pocket integration
-    that can retrieve read items from Pocket
-    or send bookmarks to Pocket for later reading;
-    the main issue right now is that the only authentication flows available
-    don't work well with desktop applications.
-I am hoping this will change in the future
-    and make enabling this for everyone feasible;
-    the integration is really quite slick,
-    except for the fact that it's nearly impossible to set up!
-You can enable this integration by setting `RABBITMARK_POCKET_INTEGRATION` to `1`,
-    but you will need to read the source code to figure out how it works,
-    create your own Pocket app and API keys,
-    obtain an OAuth token through some weird hack,
-    and manually edit your RabbitMark database to configure it,
-    so this is not for the faint of heart.
-**I will not provide support on this integration.**
