@@ -5,7 +5,8 @@ import sys
 from typing import NoReturn, Optional
 
 # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut, QDialog, QFileDialog
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QShortcut, QDialog,
+                             QFileDialog, QListWidgetItem)
 from PyQt5.QtGui import QDesktopServices, QKeySequence, QCursor
 from PyQt5.QtCore import Qt, QUrl
 
@@ -92,9 +93,9 @@ class MainWindow(QMainWindow):
         self.tableView.setColumnWidth(0, 500)
 
         # set up tag list
-        self.tags = tag_ops.scan_tags(self.session, self.showPrivates)
-        for i in self.tags:
-            self.form.tagList.addItem(i)
+        tag_counts = tag_ops.scan_tags_with_counts(self.session, self.showPrivates)
+        for tag_name, count in tag_counts.items():
+            self.form.tagList.addItem(self._makeTagItem(tag_name, count))
         self.form.tagList.sortItems()
         self.form.tagList.itemSelectionChanged.connect(self.onCheckOptionAvailability)
 
@@ -114,12 +115,33 @@ class MainWindow(QMainWindow):
     def _currentSearchMode(self) -> SearchMode:
         return SearchMode(self.form.tagsModeDropdown.currentIndex())
 
+    @staticmethod
+    def _makeTagItem(tag_name: str, count: int) -> QListWidgetItem:
+        """Create a QListWidgetItem with display text
+        'name (count)' and raw name in UserRole."""
+        item = QListWidgetItem(f"{tag_name} ({count})")
+        item.setData(Qt.UserRole, tag_name)
+        return item
+
+    @staticmethod
+    def _tagName(item: QListWidgetItem) -> str:
+        "Return the raw tag name stored in a tag list item."
+        return item.data(Qt.UserRole)
+
+    def _findTagItem(self, tag_name: str) -> Optional[QListWidgetItem]:
+        "Find a tag list item by its raw tag name (UserRole data)."
+        for i in range(self.form.tagList.count()):
+            item = self.form.tagList.item(i)
+            if item.data(Qt.UserRole) == tag_name:
+                return item
+        return None
+
     def _getSingleTagName(self) -> Optional[str]:
         """
         Return the name of the single tag currently selected, or display an error
         message and return None if there is not exactly one tag selected.
         """
-        tags = [str(i.text())
+        tags = [self._tagName(i)
                 for i in self.form.tagList.selectedItems()]
 
         if len(tags) < 1:
@@ -143,9 +165,9 @@ class MainWindow(QMainWindow):
     def _newBookmark(self, url) -> None:
         "Common portion of creating a new bookmark."
         # Create the new item with any tags that are selected.
-        tags = [str(i.text())
+        tags = [self._tagName(i)
                 for i in self.form.tagList.selectedItems()
-                if str(i.text()) != NOTAGS]
+                if self._tagName(i) != NOTAGS]
 
         # Full-text filter is automatically cleared on add -- otherwise, the new
         # item won't be visible!
@@ -158,6 +180,7 @@ class MainWindow(QMainWindow):
         newBookmark = bookmark.add_bookmark(self.session, url, tags)
         self.session.commit()  # pylint: disable=no-member
 
+        self._resetTagList()
         self._updateForSearch()
         index = self.tableModel.indexFromPk(newBookmark.id)
         if index is not None:
@@ -197,24 +220,25 @@ class MainWindow(QMainWindow):
 
     def _resetTagList(self) -> None:
         """
-        Update the tag list widget to match the current state of the database.
-        Need to call after anything that might add or remove tags.
+        Rebuild the tag list widget from the database.
+        Signals are blocked during rebuild; callers must handle _updateForSearch
+        explicitly if needed.
         """
-        # Get updated tag list.
-        self.tags = tag_ops.scan_tags(self.session, self.showPrivates)
+        # Save selected tag names.
+        selectedNames = {self._tagName(i)
+                         for i in self.form.tagList.selectedItems()}
 
-        # Remove tags that no longer exist.
-        toRemove = [self.form.tagList.item(i)
-                    for i in range(self.form.tagList.count())
-                    if self.form.tagList.item(i).text() not in self.tags]
-        for i in toRemove:
-            self.form.tagList.takeItem(self.form.tagList.row(i))
+        tag_counts = tag_ops.scan_tags_with_counts(self.session, self.showPrivates)
 
-        # Add new tags and resort list.
-        for i in self.tags:
-            if not self.form.tagList.findItems(i, Qt.MatchExactly):
-                self.form.tagList.addItem(i)
-        self.form.tagList.sortItems()
+        # Rebuild list with signals blocked to avoid spurious updates.
+        with utils.signalsBlocked(self.form.tagList):
+            self.form.tagList.clear()
+            for tag_name, count in tag_counts.items():
+                item = self._makeTagItem(tag_name, count)
+                self.form.tagList.addItem(item)
+                if tag_name in selectedNames:
+                    item.setSelected(True)
+            self.form.tagList.sortItems()
 
     def _updateTitleCount(self, count) -> None:
         """
@@ -233,7 +257,7 @@ class MainWindow(QMainWindow):
         bookmark after the view is refreshed if that bookmark is still in the
         new view.
         """
-        selectedTags = [str(i.text())
+        selectedTags = [self._tagName(i)
                         for i in self.form.tagList.selectedItems()]
         mark = self.tableModel.getObj(self.tableView.currentIndex())
         oldId = None if mark is None else mark.id
@@ -434,6 +458,7 @@ class MainWindow(QMainWindow):
             tag_ops.delete_tag(self.session, tag)
             self.session.commit()  # pylint: disable=no-member
             self._resetTagList()
+            self._updateForSearch()
             self.fillEditPane()
 
     def onMergeTag(self) -> None:
@@ -447,9 +472,12 @@ class MainWindow(QMainWindow):
             if tag_ops.merge_tags(self.session, tag, new):
                 self.session.commit()  # pylint: disable=no-member
                 self._resetTagList()
+                self._updateForSearch()
                 self.fillEditPane()
             # select the tag we merged into
-            self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
+            merged_item = self._findTagItem(new)
+            if merged_item:
+                merged_item.setSelected(True)
 
     def onRenameTag(self) -> None:
         "Rename the selected tag."
@@ -462,13 +490,16 @@ class MainWindow(QMainWindow):
             if tag_ops.rename_tag(self.session, tag, new):
                 self.session.commit()  # pylint: disable=no-member
                 self._resetTagList()
+                self._updateForSearch()
                 self.fillEditPane()
             else:
                 utils.errorBox("A tag by that name already exists.",
                                "Cannot rename tag")
 
             # select the newly renamed tag
-            self.form.tagList.findItems(new, Qt.MatchExactly)[0].setSelected(True)
+            renamed_item = self._findTagItem(new)
+            if renamed_item:
+                renamed_item.setSelected(True)
 
     # Entire view
     def onFocusFind(self) -> None:
@@ -544,7 +575,7 @@ class MainWindow(QMainWindow):
 
         bookmarkSelected = bool(self.tableModel.getObj(self.tableView.currentIndex()))
         tagSelList = self.form.tagList.selectedItems()
-        tagSelected = bool(tagSelList) and not tagSelList[0].text() == NOTAGS
+        tagSelected = bool(tagSelList) and not self._tagName(tagSelList[0]) == NOTAGS
         multipleTagsSelected = len(tagSelList) > 1
 
         for action in bookmarkActions:

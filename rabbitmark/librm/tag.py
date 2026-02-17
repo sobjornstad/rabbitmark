@@ -4,8 +4,10 @@ tag.py -- RabbitMark tag operations
 
 from typing import Sequence
 
+from sqlalchemy import func
+
 from rabbitmark.definitions import NOTAGS
-from .models import Tag, Bookmark
+from .models import Tag, Bookmark, mark_tag_assoc
 
 
 def change_tags(session, existing_bookmark: Bookmark, new_tags: Sequence[str]) -> None:
@@ -106,3 +108,29 @@ def scan_tags(session, show_private: bool) -> Sequence[str]:
     tag_list = [str(i) for i in q.all()]
     tag_list.append(NOTAGS)
     return tag_list
+
+
+def scan_tags_with_counts(session, show_private: bool) -> dict[str, int]:
+    """
+    Get a dict mapping tag names to their bookmark counts, plus the NOTAGS
+    placeholder. When show_private is False, count only non-private bookmarks;
+    tags with zero visible bookmarks are excluded.
+    """
+    # pylint: disable=singleton-comparison
+    q = (
+        session.query(Tag.text, func.count(mark_tag_assoc.c.mark_id))
+        .join(mark_tag_assoc, Tag.id == mark_tag_assoc.c.tag_id)
+        .join(Bookmark, Bookmark.id == mark_tag_assoc.c.mark_id)
+    )
+    if not show_private:
+        q = q.filter(Bookmark.private == False)
+    q = q.group_by(Tag.text)
+    result = dict(q.all())
+
+    # Count bookmarks with no tags at all.
+    notags_q = session.query(func.count(Bookmark.id)).filter(~Bookmark.tags.any())
+    if not show_private:
+        notags_q = notags_q.filter(Bookmark.private == False)
+    result[NOTAGS] = notags_q.scalar()
+
+    return result

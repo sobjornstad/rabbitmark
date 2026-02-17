@@ -1,7 +1,5 @@
 ## Bugs
 
-- [ ] Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
-
 
 ## Refactor
 
@@ -14,7 +12,6 @@
 
 - [ ] Add a check to determine if archive.org URL is *already* used, and if so to strip out the non-archive.org part and/or do a new snapshot search.
 - [ ] Add keyboard navigation for tags
-- [ ] Show number of occurrences of each tag
 
 
 ## Features (possible)

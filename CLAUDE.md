@@ -39,3 +39,4 @@ Three-layer architecture: presentation (gui/ and cli/) → business logic (librm
 - Bookmark names must be unique (duplicates get auto-numbered). URLs are not unique.
 - In Qt UI code, use `camelCase` to match Qt's API style; use `snake_case` everywhere else.
 - The `RABBITMARK_DATABASE` env var overrides the default database path.
+- When blocking Qt signals, use the `utils.signalsBlocked(widget)` context manager instead of manual `blockSignals()`/`blockSignals()` pairs.
