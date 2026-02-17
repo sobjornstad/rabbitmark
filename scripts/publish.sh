@@ -6,9 +6,8 @@ if [ ! -d "scripts" ]; then
   exit 1
 fi
 
-. venv/bin/activate
 rm -rf build/
 rm -f dist/*
 mkdir -p dist
-python setup.py sdist bdist_wheel
-TWINE_PASSWORD=$(cat .pypi_token) twine upload --username '__token__' dist/*
+uv build
+UV_PUBLISH_TOKEN=$(cat .pypi_token) uv publish

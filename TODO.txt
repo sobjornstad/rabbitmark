@@ -1,47 +1,39 @@
-Bugfixes:
-    * Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
-
-Refactor:
-    * Clean up where committing and flushing is done
-
-Implement:
-    * Have a way to actually log in to Pocket, rather than having to manually run the OAuth flow and add the key in the database
-    * Help menu options (fix links)
-
-Possible ideas:
-    * Allow items in the Skip column of the Pocket import to be viewed in the preview pane.
-    * Allow editing items while importing from Pocket.
-    * CLI interface
-    * Frequency of tags; "Hapax legomena last" option
-    * Sync with TiddlyWiki (ideally bidirectionally?)
-    * Import/export could be improved
-    * Duplicate finding tool
-    * Save note that WBM snapshot has been taken to database?
-    * Option to automatically snapshot a site in the WBM when bookmarking it
-
-
---------
-
-- [ ] RabbitMark: Save Page Now API (in #Pending()
-- [ ] Python library that syncs things into TiddlyWiki
-
 ## Bugs
 
-- [ ] Clear the search box upon adding an item so that the new item shows up.
+- [ ] Don’t reset the sort order when repopulating the bookmarks pane (this is a long-outstanding bug I’d never even noticed); updateForSearch() actually just does a sort by col 0!
+- [ ] Clear the search box upon adding an item so that the new item shows up
 - [ ] Adding new with tags selected and not (no tags) doesn't work as expected
-- [ ] Don't jump the cursor around when focus is lost.
+- [ ] Don't jump the cursor around when focus is lost
+- [ ] Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
+- [ ] Help menu options (fix links)
+
 
 ## Refactor
 
+- [ ] Remove Pocket integration, as Pocket does not exist anymore
+- [ ] Clean up where committing and flushing is done
 - [ ] General refactoring (combine with other tasks as possible)
 
-## Features
 
-- [ ] Add a thingy to check if archive.org URL is *already* used, and if so to strip out the non-archive.org part and/or do a new snapshot search.
+## Features (probably do)
+
+- [ ] Add a check to determine if archive.org URL is *already* used, and if so to strip out the non-archive.org part and/or do a new snapshot search.
 - [ ] Add keyboard navigation for tags
-- [ ] "Hapax legomena last" option in Tags menu
-- [ ] "Pinned" flag (put at top of display)
-- [ ] Add an option to select the tags that the current bookmark has?
-- [ ] Add some sort of inter-item linkage function.
-- [ ] Don’t reset the sort order when repopulating the bookmarks pane (this is a long-outstanding bug I’d never even noticed); updateForSearch() actually just does a sort by col 0!
 - [ ] Show number of occurrences of each tag
+
+
+## Features (possible)
+
+- [ ] Save Page Now API (see correspondence with WayBackMachine)
+- [ ] "Pinned" flag (put at top of display)
+- [ ] Add an option to select the tags that the current bookmark has
+- [ ] Add some sort of inter-item linkage function
+- [ ] Python library that syncs things into TiddlyWiki
+- [ ] Allow items in the Skip column of the Pocket import to be viewed in the preview pane.
+- [ ] CLI interface
+- [ ] Sync with TiddlyWiki (ideally bidirectionally?)
+- [ ] Import/export could be improved
+- [ ] Duplicate finding tool
+- [ ] Save note that WBM snapshot has been taken to database?
+- [ ] Option to automatically snapshot a site in the WBM when bookmarking it
+- [ ] "Hapax legomena last" option in Tags menu

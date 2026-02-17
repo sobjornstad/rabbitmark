@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git -C /home/soren/cabinet/Me/Software/Active/rabbitmark log --oneline -20)"
+      "Bash(git -C /home/soren/cabinet/Me/Software/Active/rabbitmark log --oneline -20)",
+      "Bash(uv sync:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run mypy:*)"
     ]
   }
 }

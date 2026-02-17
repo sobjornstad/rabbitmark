@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rabbitmark"
+dynamic = ["version"]
+description = "powerful tag-based bookmark manager for the desktop"
+readme = "README.md"
+license = "GPL-3.0-only"
+requires-python = ">=3.10"
+authors = [
+    { name = "Soren I. Bjornstad", email = "contact@sorenbjornstad.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Topic :: Internet :: WWW/HTTP",
+]
+dependencies = [
+    "SQLAlchemy>=1.4,<2",
+    "requests>=2.28",
+    "PyQt5>=5.15",
+    "pyperclip>=1.8",
+    "tabulate>=0.9",
+]
+
+[project.urls]
+Homepage = "https://github.com/sobjornstad/rabbitmark"
+
+[project.scripts]
+rabbitmark = "rabbitmark.__main__:main"
+
+[dependency-groups]
+dev = [
+    "mypy",
+    "pylint",
+    "pytest",
+    "behave",
+    "types-sqlalchemy",
+]
+
+[tool.hatch.version]
+path = "rabbitmark/definitions.py"
+pattern = 'MYVERSION = "(?P<version>[^"]+)"'

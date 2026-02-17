@@ -1,4 +1,4 @@
-.PHONY: ui
+.PHONY: ui publish
 
 all: ui
 
