@@ -101,9 +101,7 @@ class MainWindow(QMainWindow):
 
         # set up tag list
         tag_counts = tag_ops.scan_tags_with_counts(self.session, self.showPrivates)
-        for tag_name, count in tag_counts.items():
-            self.form.tagList.addItem(self._makeTagItem(tag_name, count))
-        self.form.tagList.sortItems()
+        self._fillTagList(tag_counts)
         self.form.tagList.itemSelectionChanged.connect(self.onCheckOptionAvailability)
 
         # set up details form
@@ -134,6 +132,26 @@ class MainWindow(QMainWindow):
     def _tagName(item: QListWidgetItem) -> str:
         "Return the raw tag name stored in a tag list item."
         return item.data(Qt.UserRole)
+
+    def _fillTagList(self, tag_counts: dict,
+                     selected_names: Optional[set] = None) -> None:
+        """Populate the tag list widget from tag_counts, ensuring NOTAGS
+        is always the first item regardless of sort order."""
+        self.form.tagList.clear()
+        notags_count = tag_counts.get(NOTAGS)
+        for tag_name, count in tag_counts.items():
+            if tag_name == NOTAGS:
+                continue
+            item = self._makeTagItem(tag_name, count)
+            self.form.tagList.addItem(item)
+            if selected_names and tag_name in selected_names:
+                item.setSelected(True)
+        self.form.tagList.sortItems()
+        if notags_count is not None:
+            item = self._makeTagItem(NOTAGS, notags_count)
+            self.form.tagList.insertItem(0, item)
+            if selected_names and NOTAGS in selected_names:
+                item.setSelected(True)
 
     def _findTagItem(self, tag_name: str) -> Optional[QListWidgetItem]:
         "Find a tag list item by its raw tag name (UserRole data)."
@@ -239,13 +257,7 @@ class MainWindow(QMainWindow):
 
         # Rebuild list with signals blocked to avoid spurious updates.
         with utils.signalsBlocked(self.form.tagList):
-            self.form.tagList.clear()
-            for tag_name, count in tag_counts.items():
-                item = self._makeTagItem(tag_name, count)
-                self.form.tagList.addItem(item)
-                if tag_name in selectedNames:
-                    item.setSelected(True)
-            self.form.tagList.sortItems()
+            self._fillTagList(tag_counts, selectedNames)
 
     def _updateTitleCount(self, count) -> None:
         """

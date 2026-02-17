@@ -1,7 +1,5 @@
 ## Bugs
 
-- [ ] (no tags) can appear below other items (e.g., _something)
-- [ ] Also probably don’t show (no tags) if there aren’t any items with no tags?
 
 ## Refactor
 
