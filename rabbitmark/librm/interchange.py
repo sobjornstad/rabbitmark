@@ -68,7 +68,6 @@ def import_bookmarks_from_csv(session, target_path: str, dialect,
     """
     Import bookmarks from the CSV file at /target_path/. If the names
     duplicate names already present, do not import those.
-    (TODO: It would be nice to be able to choose whether you want to overwrite.)
 
     Parameters:
         session - Database session to create imported bookmarks in
@@ -105,8 +104,6 @@ def import_bookmarks_from_csv(session, target_path: str, dialect,
             assert "name" in mark_data, "Missing Name role allowed in import!"
 
             # If the bookmark exists already, ignore it.
-            # TODO: It would be nice to report the content so the user can see
-            # if there's an issue.
             if bookmark.url_exists(session, mark_data['url']):
                 dupes += 1
                 continue

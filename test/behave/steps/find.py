@@ -11,7 +11,7 @@ def step_impl(context):
 
 @when(u'we run the command "{command}"')
 def step_impl(context, command):
-    command_seq = command.split(' ')  # TODO: Fails for quoted args
+    command_seq = command.split(' ')  # note: Fails for quoted args
     result = rabbitmark.cli.call(command_seq)
     context.result_lines = result.split('\n')
 

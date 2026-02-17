@@ -639,13 +639,11 @@ class MainWindow(QMainWindow):
     @staticmethod
     def onHelpContents() -> None:
         "Display the manual."
-        # TODO: Update with real URL
         QDesktopServices.openUrl(QUrl("https://github.com/sobjornstad/rabbitmark#readme"))
 
     @staticmethod
     def onReportBug() -> None:
         "Open the GitHub issues page."
-        # TODO: Update with real URL
         QDesktopServices.openUrl(QUrl("https://github.com/sobjornstad/rabbitmark/issues/new"))
 
     def onAbout(self) -> None:

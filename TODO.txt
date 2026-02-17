@@ -5,7 +5,6 @@
 
 - [ ] Clean up where committing and flushing is done
 - [ ] General refactoring (combine with other tasks as possible)
-- [ ] Check TODO comments etc.
 
 
 ## Features (probably do)
@@ -13,6 +12,7 @@
 
 ## Features (possible)
 
+- [ ] Reimplement sync from Readwise, like we had for Pocket
 - [ ] Save Page Now API (see correspondence with WayBackMachine)
 - [ ] "Pinned" flag (put at top of display)
 - [ ] Add an option to select the tags that the current bookmark has
