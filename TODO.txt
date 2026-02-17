@@ -18,3 +18,30 @@ Possible ideas:
     * Duplicate finding tool
     * Save note that WBM snapshot has been taken to database?
     * Option to automatically snapshot a site in the WBM when bookmarking it
+
+
+--------
+
+- [ ] RabbitMark: Save Page Now API (in #Pending()
+- [ ] Python library that syncs things into TiddlyWiki
+
+## Bugs
+
+- [ ] Clear the search box upon adding an item so that the new item shows up.
+- [ ] Adding new with tags selected and not (no tags) doesn't work as expected
+- [ ] Don't jump the cursor around when focus is lost.
+
+## Refactor
+
+- [ ] General refactoring (combine with other tasks as possible)
+
+## Features
+
+- [ ] Add a thingy to check if archive.org URL is *already* used, and if so to strip out the non-archive.org part and/or do a new snapshot search.
+- [ ] Add keyboard navigation for tags
+- [ ] "Hapax legomena last" option in Tags menu
+- [ ] "Pinned" flag (put at top of display)
+- [ ] Add an option to select the tags that the current bookmark has?
+- [ ] Add some sort of inter-item linkage function.
+- [ ] Don’t reset the sort order when repopulating the bookmarks pane (this is a long-outstanding bug I’d never even noticed); updateForSearch() actually just does a sort by col 0!
+- [ ] Show number of occurrences of each tag
