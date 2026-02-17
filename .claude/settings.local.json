@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /home/soren/cabinet/Me/Software/Active/rabbitmark log --oneline -20)"
+    ]
+  }
+}
