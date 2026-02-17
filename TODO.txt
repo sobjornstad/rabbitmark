@@ -1,8 +1,5 @@
 ## Bugs
 
-- [ ] Don’t reset the sort order when repopulating the bookmarks pane (this is a long-outstanding bug I’d never even noticed); updateForSearch() actually just does a sort by col 0!
-- [ ] Clear the search box upon adding an item so that the new item shows up
-- [ ] Adding new with tags selected and not (no tags) doesn't work as expected
 - [ ] Don't jump the cursor around when focus is lost
 - [ ] Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
 - [ ] Help menu options (fix links)

@@ -200,6 +200,9 @@
            <property name="gridStyle">
             <enum>Qt::NoPen</enum>
            </property>
+           <property name="sortingEnabled">
+            <bool>true</bool>
+           </property>
            <attribute name="horizontalHeaderDefaultSectionSize">
             <number>250</number>
            </attribute>
@@ -225,7 +228,7 @@
      <x>0</x>
      <y>0</y>
      <width>900</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">

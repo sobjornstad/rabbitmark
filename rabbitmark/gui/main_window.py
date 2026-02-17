@@ -103,6 +103,7 @@ class MainWindow(QMainWindow):
         self.tableView.setModel(self.tableModel)
         self.sm = self.tableView.selectionModel()
         self.sm.selectionChanged.connect(self.fillEditPane)
+        self.tableView.horizontalHeader().setSortIndicator(0, Qt.AscendingOrder)
         self.tableView.setColumnWidth(0, 500)
 
         # set up tag list
@@ -249,7 +250,15 @@ class MainWindow(QMainWindow):
         nameText = "%" + self.form.searchBox.text() + "%"
         marks = bookmark.find_bookmarks(self.session, nameText, selectedTags,
                                         self.showPrivates, searchMode)
+
+        header = self.tableView.horizontalHeader()
+        saved_col = header.sortIndicatorSection()
+        saved_order = header.sortIndicatorOrder()
+
         self.tableModel.updateContents(marks)
+        self.tableModel.sort(saved_col, saved_order)
+        header.setSortIndicator(saved_col, saved_order)
+
         self._reselectItem(oldId)
         self._updateTitleCount(self.tableModel.rowCount(self))
 

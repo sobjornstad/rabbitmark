@@ -48,8 +48,7 @@ class BookmarkTableModel(QAbstractTableModel):
             if self.name == 'Name':
                 return (lambda i: i.name)
             elif self.name == 'Tags':
-                print("DEBUG: Sorting by this column is not supported.")
-                return (lambda i: None)
+                return (lambda i: ', '.join(sorted(t.text for t in i.tags)).casefold())
             else:
                 raise AssertionError(
                     "Model column %i not defined in sort_function()"
@@ -61,6 +60,8 @@ class BookmarkTableModel(QAbstractTableModel):
         self.parent = parent
         self.headerdata = ("Name", "Tags")
         self.L: List[Bookmark] = []  # pylint: disable=invalid-name
+        self._sort_col = 0
+        self._sort_order = Qt.AscendingOrder
 
     ### Standard reimplemented methods ###
     def rowCount(self, parent) -> int: #pylint: disable=no-self-use,unused-argument
@@ -91,10 +92,12 @@ class BookmarkTableModel(QAbstractTableModel):
 
     def sort(self, col, order=Qt.AscendingOrder):
         "Re-sort the model data by the given column and ordering."
+        self._sort_col = col
+        self._sort_order = order
         rev = (order != Qt.AscendingOrder)
-        self.beginResetModel()
+        self.layoutAboutToBeChanged.emit()
         self.L.sort(key=self.ModelColumn(col).sort_function(), reverse=rev)
-        self.endResetModel()
+        self.layoutChanged.emit()
 
 
     ### Custom methods ###
@@ -112,8 +115,6 @@ class BookmarkTableModel(QAbstractTableModel):
         """
         self.beginResetModel()
         self.L = marks
-        self.sort(0)
-        self.dataChanged.emit()
         self.endResetModel()
 
     def nextAfterDelete(self, index):
