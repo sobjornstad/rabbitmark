@@ -8,12 +8,12 @@ RabbitMark is a desktop bookmark manager built with PyQt5 and SQLAlchemy/SQLite.
 
 ## Build & Development Commands
 
-- **Run GUI**: `rabbitmark` (or `python -m rabbitmark`)
-- **Run CLI**: `rabbitmark find|go|copy [args]` (CLI mode activates when args are present)
+- **Run GUI**: `uv run rabbitmark` (or `uv run python -m rabbitmark`)
+- **Run CLI**: `uv run rabbitmark find|go|copy [args]` (CLI mode activates when args are present)
 - **Compile Qt forms**: `make ui` (runs `pyuic5`/`pyrcc5` via `scripts/make-forms.sh`)
-- **Lint**: `pylint rabbitmark/` (config in `pylintrc`, max line length 88)
-- **Type check**: `mypy rabbitmark/`
-- **Tests**: `pytest` or `cd test/behave && behave`
+- **Lint**: `uv run pylint rabbitmark/` (config in `pylintrc`, max line length 88)
+- **Type check**: `uv run mypy rabbitmark/`
+- **Tests**: `uv run pytest` or `cd test/behave && uv run behave`
 - **Publish**: `make publish`
 
 ## Architecture

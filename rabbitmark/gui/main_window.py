@@ -180,7 +180,7 @@ class MainWindow(QMainWindow):
             self.detailsForm.nameBox.selectAll()
             self.detailsForm.nameBox.setFocus()
 
-    def _reselectItem(self, item=None) -> None:
+    def _reselectItem(self, item=None, fill_edit_pane=True) -> None:
         """
         Select the given /item/ if it still exists in the view, or the first
         item in the view if it doesn't or /item/ is None.
@@ -191,6 +191,9 @@ class MainWindow(QMainWindow):
         Arguments:
             item (default None) - if not None, attempt to select the item by
                 this primary key.
+            fill_edit_pane - if True, repopulate the edit pane from the
+                database. Set to False when the edit pane already has the
+                correct content (e.g., after an auto-save).
         """
         if item is None:
             idx = self.tableModel.index(0, 0)
@@ -199,8 +202,12 @@ class MainWindow(QMainWindow):
             if idx is None: # provided item isn't in this view
                 idx = self.tableModel.index(0, 0)
 
-        self.tableView.setCurrentIndex(idx)
-        self.fillEditPane()
+        if not fill_edit_pane:
+            with utils.signalsBlocked(self.sm):
+                self.tableView.setCurrentIndex(idx)
+        else:
+            self.tableView.setCurrentIndex(idx)
+            self.fillEditPane()
         self.onCheckOptionAvailability()  # after resetting the edit pane
 
     def _resetTagList(self) -> None:
@@ -232,7 +239,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("RabbitMark - %i match%s" % (
             count, '' if count == 1 else 'es'))
 
-    def _updateForSearch(self) -> None:
+    def _updateForSearch(self, *_args, fill_edit_pane=True) -> None:
         """
         Update the bookmarks table to match the filter and tag selection.
 
@@ -259,7 +266,7 @@ class MainWindow(QMainWindow):
         self.tableModel.sort(saved_col, saved_order)
         header.setSortIndicator(saved_col, saved_order)
 
-        self._reselectItem(oldId)
+        self._reselectItem(oldId, fill_edit_pane=fill_edit_pane)
         self._updateTitleCount(self.tableModel.rowCount(self))
 
 
@@ -311,22 +318,7 @@ class MainWindow(QMainWindow):
             if bookmark.save_if_edited(self.session, mark, utils.mark_dictionary(sfdw)):
                 self.session.commit()  # pylint: disable=no-member
                 self._resetTagList()
-
-                # HACK: _updateForSearch() moves the cursor to the start in
-                # these fields, so that the beginning will always be displayed
-                # when selecting a new item (otherwise, only the end of, say, a
-                # long URL, is shown, which is irritating). However, this is
-                # super annoying if we unfocus the window to go look something
-                # up and RM saves and the cursor goes back to the start! The
-                # correct way would be some major refactoring so fillForEdit()
-                # isn't called from both event handlers and other functions and
-                # isn't responsible for the reset. This will make it work
-                # correctly for now.
-                resetting = (sfdw.nameBox, sfdw.urlBox, sfdw.tagsBox)
-                oldCursorPositions = [i.cursorPosition() for i in resetting]
-                self._updateForSearch()
-                for i, posn in zip(resetting, oldCursorPositions):
-                    i.setCursorPosition(posn)
+                self._updateForSearch(fill_edit_pane=False)
 
     def tagsSelect(self, what) -> None:
         "Select tags en masse using the convenience buttons at the bottom."

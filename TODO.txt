@@ -1,8 +1,6 @@
 ## Bugs
 
-- [ ] Don't jump the cursor around when focus is lost
 - [ ] Properly cancel the link crawl (currently, it keeps going in the background and you can't quit the app until it finishes)
-- [ ] Help menu options (fix links)
 
 
 ## Refactor
