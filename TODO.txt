@@ -1,5 +1,8 @@
 ## Bugs
 
+- [ ] Crash if you select a jpeg image to import as a CSV
+      (not very likely, lol, but even misusing the app shouldn’t crash it)
+      It also can happen if it can’t detect the delimiter, or there’s only one line so no headers
 
 ## Refactor
 

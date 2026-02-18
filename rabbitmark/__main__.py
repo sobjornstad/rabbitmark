@@ -8,14 +8,16 @@ for relicensing under some FOSS license).
 
 import sys
 
-import rabbitmark.cli
-import rabbitmark.gui.main_window
+from rabbitmark import cli
 
 
 def main():
     if len(sys.argv) > 1:
-        print(rabbitmark.cli.call())
+        result = cli.call()
+        if result is not None:
+            print(result)
     else:
-        rabbitmark.gui.main_window.start()
+        from rabbitmark.gui import main_window  # pylint: disable=import-outside-toplevel
+        main_window.start()
 
 main()
