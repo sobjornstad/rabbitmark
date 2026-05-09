@@ -4,6 +4,16 @@
     designed for efficiently managing large collections of websites.
 
 
+## AI use
+
+The majority of work on RabbitMark was done before the advent of useful AI coding agents.
+In recent times, I have made some feature improvements using Claude Code.
+I maintain a strong understanding of the codebase,
+and essentially of the architecture was hand-designed.
+
+All documentation is 100% human-written.
+
+
 ## Features
 
 * **Tag-based organization**. Folders don't work well for bookmarks; things usually belong in multiple places.
