@@ -1,3 +1,8 @@
+## Changes in v0.3.1
+
+Fix a build misconfiguration that was leaving necessary files out of the pip
+package.
+
 ## Changes in v0.3.0
 
 Bugs:
