@@ -6,6 +6,7 @@ if [ ! -d "scripts" ]; then
   exit 1
 fi
 
+make ui
 rm -rf build/
 rm -f dist/*
 mkdir -p dist

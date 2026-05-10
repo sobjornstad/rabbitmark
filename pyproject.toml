@@ -53,6 +53,11 @@ dev = [
 path = "rabbitmark/definitions.py"
 pattern = 'MYVERSION = "(?P<version>[^"]+)"'
 
+[tool.hatch.build]
+artifacts = [
+  "rabbitmark/gui/forms/*.py",
+]
+
 [tool.mypy]
 exclude = ["rabbitmark/gui/forms/"]
 
