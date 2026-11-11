@@ -15,9 +15,21 @@ from rabbitmark.librm import bookmark
 from rabbitmark.librm import database
 
 
+def _escape_like(text: str) -> str:
+    """
+    Escape SQL LIKE wildcards in user-supplied search text.
+
+    The search is documented as a substring match, so a literal ``%``,
+    ``_`` or ``\\`` typed by the user must not act as a wildcard.
+    """
+    return (text.replace('\\', '\\\\')
+                .replace('%', '\\%')
+                .replace('_', '\\_'))
+
+
 def find_handler(session, args: argparse.Namespace) -> str:
     if args.filter:
-        filter_text = '%' + args.filter + '%'
+        filter_text = '%' + _escape_like(args.filter) + '%'
     else:
         filter_text = '%'
 

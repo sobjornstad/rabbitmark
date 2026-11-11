@@ -140,9 +140,9 @@ def find_bookmarks(session,
     we are given those already!
     """
     query = session.query(Bookmark).filter(
-        or_(Bookmark.name.like(filter_text),
-            Bookmark.url.like(filter_text),
-            Bookmark.description.like(filter_text)))
+        or_(Bookmark.name.like(filter_text, escape='\\'),
+            Bookmark.url.like(filter_text, escape='\\'),
+            Bookmark.description.like(filter_text, escape='\\')))
 
     if tags:
         if search_mode == SearchMode.And:
